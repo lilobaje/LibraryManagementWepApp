@@ -1,0 +1,21 @@
+{% extends 'admin_temp/base.html' %}
+
+ <!-- Main content -->
+ {% block main_content %} 
+ <main class="content">
+<form>
+
+    <label for="student_id">student</label>
+    <input type="text" name="student_id" id="student_id">
+<hr>
+    <label for="isbn">Book</label>
+    <input type="text" name="isbn" id="isbn">
+</form>
+ <hr>
+ <button type="submit" class="btn btn-outline-primary mt-4">Issue Book</button>
+   
+ </main>
+ 
+ {% endblock main_content %}
+  <!-- /.content -->
+  

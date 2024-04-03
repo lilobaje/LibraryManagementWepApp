@@ -1,0 +1,28 @@
+{% extends 'admin_temp/base.html' %}
+
+ <!-- Main content -->
+ {% block main_content %} 
+ <main class="content">
+
+    <div class="container mt-4">
+        <form method="POST"> {% csrf_token %}
+            {% for i in form %}
+            <div class="form-group">
+                <br>
+              <label class="control-label col-xs-4">{{ i.label_tag }}</label>
+              <div class="col-xs-8 mt-2">
+              {{ i }}
+               </div>
+            </div>
+            {% endfor %}
+        <button type="submit" class="btn btn-outline-primary mt-4">Issue Book</button>
+    </div>
+    </form>
+ </main>
+ 
+ {% endblock main_content %}
+  <!-- /.content -->
+  
+{% block js %}
+	
+{% endblock js%}

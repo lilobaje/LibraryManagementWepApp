@@ -1,0 +1,77 @@
+{% extends 'admin_temp/base.html' %}
+
+ <!-- Main content -->
+ {% block main_content %} 
+ <main class="content">
+
+    <div class="row">
+        <div class="col-12 col-lg-12">
+           <form role="form" method="POST" action="/edit_book_save" enctype="multipart/form-data">
+
+            {% csrf_token %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Book Title</h5>
+                </div>
+                <div class="card-body">
+                    <input type="text" class="form-control" value="{{ book.name }}"  name="name">
+                </div>
+
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Author</h5>
+                </div>
+                <div class="card-body">
+                    <input type="text" class="form-control" value="{{ book.author }}" placeholder="Enter Authors Name" name="author">
+                </div>
+
+               
+
+                <div class="card-header">
+                    <h5 class="card-title mb-0">ISBN Number</h5>
+                </div>
+                <div class="card-body">
+                    <input type="text" class="form-control"  value="{{ book.isbn }}"  placeholder="Enter Book ISBN" name="isbn">
+                </div>
+
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Book Image</h5>
+                </div>
+                <div class="card-body">
+                    <input class="form-control form-control-lg" type="file" name="image" placeholder="Select Display Picture">
+                </div>
+
+
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Book Description</h5>
+                </div>
+                <div class="card-body">
+                    <input type="text" class="form-control"  value="{{ book.description }}"  placeholder="Enter Description" name="description">
+                </div>
+
+
+
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Category</h5>
+                </div>
+                <div class="card-body">
+                   <select class="form-control"  value="{{ book.category }}"  name="category">
+                          <option>Science</option>
+                          <option>Art</option>
+                          <option>Action</option>
+                          <option>Poetry</option>
+                          <option>Music</option>
+                        </select>
+                </div>
+                <button type="submit" class="btn btn-outline-primary mt-4">Edit Book</button>
+            </div>
+
+        </form>
+        </div>
+
+       
+    </div>
+ 
+ </main>
+ 
+ {% endblock main_content %}
+  <!-- /.content -->

@@ -1,0 +1,178 @@
+{% load static %}
+<html lang="en"><head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="description" content="Responsive Admin &amp; Dashboard Template based on Bootstrap 5">
+	<meta name="author" content="AdminKit">
+	<meta name="keywords" content="adminkit, bootstrap, bootstrap 5, admin, dashboard, template, responsive, css, sass, html, theme, front-end, ui kit, web">
+
+	<link rel="preconnect" href="https://fonts.gstatic.com">
+	<link rel="shortcut icon" href="img/icons/icon-48x48.png">
+
+	<link rel="canonical" href="https://demo-basic.adminkit.io/pages-sign-up.html">
+
+	<title>Sign Up | Library</title>
+
+	<link href="{% static "css/app.css" %}" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&amp;display=swap" rel="stylesheet">
+</head>
+
+<body>
+	<main class="d-flex w-100">
+		<div class="container d-flex flex-column">
+			<div class="row vh-100">
+				<div class="col-sm-10 col-md-8 col-lg-6 mx-auto d-table h-100">
+					<div class="d-table-cell align-middle">
+
+						<div class="text-center mt-4">
+							<h1 class="h2">Registration Form</h1>
+							<p class="lead">
+								
+								Bad libraries build collections, good libraries build service, great libraries build communities.
+							</p>
+						</div>
+
+
+						<div class="card">
+							<div class="card-body">
+								<div class="m-sm-4">
+                                    <form method="POST" enctype="multipart/form-data"> 
+                                        {% csrf_token %}
+										<div class="mb-3">
+											<label class="form-label">First Name</label>
+											<input class="form-control form-control-lg" type="text" name="first_name" placeholder="First name">
+										</div>
+										<div class="mb-3">
+											<label class="form-label">Last Name</label>
+											<input class="form-control form-control-lg" type="text" name="last_name" placeholder="Last name">
+										</div>
+                                        <div class="mb-3">
+											<label class="form-label">Username </label>
+											<input class="form-control form-control-lg" type="text" name="username" placeholder="Username">
+										</div>
+										<div class="mb-3">
+											<label class="form-label">Email</label>
+											<input class="form-control form-control-lg" type="email" name="email" placeholder="Enter your email">
+										</div>
+										<div class="mb-3">
+											<label class="form-label">Mobile Number</label>
+											<input class="form-control form-control-lg" type="phone" name="phone" placeholder="Enter phone">
+										</div>
+                                        <div class="mb-3">
+											<label class="form-label">Branch Name</label>
+											<input class="form-control form-control-lg" type="text" name="branch" placeholder="Branch">
+										</div>
+                                        <div class="mb-3">
+											<label class="form-label">Class Name</label>
+											<input class="form-control form-control-lg" type="text" name="classroom" placeholder="Enter Class">
+										</div>
+                                        <div class="mb-3">
+											<label class="form-label">Student Image</label>
+											<input class="form-control form-control-lg" type="file" name="image" placeholder="Select Display Picture">
+										</div>
+                                        <div class="mb-3">
+											<label class="form-label">Password</label>
+											<input class="form-control form-control-lg" type="text" name="password" placeholder="password">
+										</div>
+                                        <div class="mb-3">
+											<label class="form-label">Confirm Password</label>
+											<input class="form-control form-control-lg" type="text" name="confirm_password" placeholder="confirm">
+										</div>
+										<div class="text-center mt-3">
+                                            <button type="submit" class="btn btn-outline-primary mt-4">Register</button>
+											<!-- <button type="submit" class="btn btn-lg btn-primary">Sign up</button> -->
+										</div>
+									</form>
+
+
+
+
+
+
+                                    <script>
+                                        {% if alert %}
+                                        alert("Registration Successfull.")
+                                        document.location = "/student_login"
+                                        {% endif %}
+                                    </script>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+
+	<script src="{% static "js/app.js" %}"></script>
+
+	
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js">
+		$(document).ready(function(){
+			$("#id_email").keyup(function(){
+				var email=$(this).val();
+	
+			   if(email!=""){
+					$.ajax({
+						url:'{% url 'check_email_exist' %}',
+						type:'POST',
+						data:{email:email}
+					})
+					.done(function(response){
+						console.log(response);
+						if(response=="True"){
+							$(".email_error").remove();
+							$("<span class='email_error' style='padding: 5px;color: red;font-weight: bold;'>Email Not Available</span>").insertAfter("#id_email");
+						}
+						else{
+							$(".email_error").remove();
+							$("<span class='email_error' style='padding: 5px;color: green;font-weight: bold;'>Email Available</span>").insertAfter("#id_email");
+						}
+					})
+					.fail(function(){
+						console.log("failed");
+					})
+				}
+				else{
+				  $(".email_error").remove();
+				}
+	
+			});
+	
+			$("#id_username").keyup(function(){
+				var username=$(this).val();
+	
+				if(username!=""){
+					$.ajax({
+						url:'{% url 'check_username_exist' %}',
+						type:'POST',
+						data:{username:username}
+					})
+					.done(function(response){
+						console.log(response);
+						if(response=="True"){
+							$(".username_error").remove();
+							$("<span class='username_error' style='padding: 5px;color: red;font-weight: bold;'>Username Not Available</span>").insertAfter("#id_username");
+						}
+						else{
+							$(".username_error").remove();
+							$("<span class='username_error' style='padding: 5px;color: green;font-weight: bold;'>Username Available</span>").insertAfter("#id_username");
+						}
+					})
+					.fail(function(){
+						console.log("failed");
+					})
+				}
+				else{
+					$(".username_error").remove();
+				}
+	
+			});
+	
+		});
+	</script>
+	
+
+</body></html>

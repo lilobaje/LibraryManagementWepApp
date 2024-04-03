@@ -1,0 +1,38 @@
+{% load static %}
+<nav class="navbar navbar-expand navbar-light navbar-bg">
+
+
+    <a class="sidebar-toggle js-sidebar-toggle">
+<i class="hamburger align-self-center"></i>
+
+</a>
+
+    <div class="navbar-collapse collapse">
+        <ul class="navbar-nav navbar-align">
+        
+            
+
+                <a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
+    <img src="{% static "img/avatars/avatar.jpg" %}" class="avatar img-fluid rounded me-1" alt="Charles Hall" /> <span class="text-dark">Librarian</span>
+  </a>
+                <div class="dropdown-menu dropdown-menu-end">
+                    
+                    <a class="dropdown-item" href="/logout/">Log out</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="form-group">
+    {% if messages %}
+      {% for message in messages %}
+      {% if message.tags == 'error' %}
+      <div class="alert alert-danger" style="margin-top:10px">{{ message }}</div>
+      {% endif %}
+      {% if message.tags == 'success' %}
+      <div class="alert alert-success" style="margin-top:10px">{{ message }}</div>
+      {% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>

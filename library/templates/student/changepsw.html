@@ -1,0 +1,78 @@
+{% extends 'student/base.html' %}
+
+ <!-- Main content -->
+ {% block main_content %} 
+ <main class="content">
+    <div class="row">
+        <!-- left column -->
+        <div class="col-md-12">
+          <!-- general form elements -->
+          <div class="card card-primary">
+            <!-- /.card-header -->
+            <!-- form start -->
+            <form role="form" method="POST" name="change_password" onsubmit="return checkPassword()">
+              {% csrf_token %}
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Username </label>
+                  <input type="text" class="form-control mt-2" name="username" value="{{request.user}}" readonly>
+                </div>
+               
+                <div class="form-group">
+                    <label for="exampleInputEmail1">Current Password</label>
+                    <input type="password" class="form-control mt-2" name="current_password" placeholder="Current Password">
+                  </div>
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">New Password</label>
+                    <input type="password" class="form-control mt-2" name="new_password" placeholder="Enter the new password">
+                  </div>
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">Confirm Password</label>
+        </div>            <input type="password" class="form-control mt-2" name="confirm_password" placeholder="Confirm the new password">
+                    
+                  </div>
+                 
+           
+              </div>
+              <!-- /.card-body -->
+
+              <div class="card-footer">
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </div>
+            </form>
+          </div>
+          <!-- /.card -->
+
+          
+
+        </div>
+        <!--/.col (left) -->
+     
+ </main>
+ 
+ {% endblock main_content %}
+  <!-- /.content -->
+
+  {% block js %}
+  <script>
+    function checkPassword() {
+        if (document.change_password.new_password.value != document.change_password.confirm_password.value) {
+            alert("New Password and Confirm Password fields does not match each other.");
+            document.change_password.confirm_password.focus();
+            return false;
+        }
+        return true;
+    }
+
+    {% if alert %}
+    alert("Password Updated Successfully.");
+    document.location = "/logout"
+    {% endif %}
+
+    {% if currpasswrong %}
+    alert("Current Password is wrong..");
+    document.location = "/change_password"
+    {% endif %}
+</script>
+
+{% endblock js %}
