@@ -15,7 +15,7 @@ class Book(models.Model):
     name = models.CharField(max_length=200)
     author = models.CharField(max_length=200)
     isbn = models.PositiveIntegerField()
-    description = models.TextField(default='DataFlair Django tutorials')
+    description = models.TextField(default='Description')
     publication_date = models.CharField(max_length=200)
     publisher = models.CharField(max_length=200)
     editor = models.CharField(max_length=200)

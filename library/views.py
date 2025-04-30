@@ -118,19 +118,35 @@ def not_returned(request,id):
     return HttpResponseRedirect(reverse("view_issued_book"))
 
  
-@login_required(login_url = '/admin_login')
+@login_required(login_url='/admin_login')
 def issue_book(request):
     form = forms.IssueBookForm()
     if request.method == "POST":
         form = forms.IssueBookForm(request.POST)
         if form.is_valid():
-            obj = models.IssuedBook()
-            obj.student_id = request.POST['name2']
-            obj.isbn = request.POST['isbn2']
-            obj.save()
-            alert = True
-            return render(request, "admin_temp/issueBook.html", {'obj':obj, 'alert':alert})
-    return render(request, "admin_temp/issueBook.html", {'form':form})
+            try:
+                student_id = request.POST['name2']  # Assuming 'name2' holds the student's ID
+                book_isbn = request.POST['isbn2']    # Assuming 'isbn2' holds the book's ISBN
+
+                student = Student.objects.get(pk=student_id)  # Get the Student object
+                book = Book.objects.get(isbn=book_isbn)      # Get the Book object
+
+                obj = models.IssuedBook()
+                obj.student = student  # Assign the Student object
+                obj.isbn = book.isbn    # Assign the book's ISBN
+                obj.book_status = "Active" # You might want to set a default status
+                obj.save()
+                alert = True
+                return render(request, "admin_temp/issueBook.html", {'obj': obj, 'alert': alert})
+            except Student.DoesNotExist:
+                messages.error(request, f"Student with ID '{student_id}' does not exist.")
+            except Book.DoesNotExist:
+                messages.error(request, f"Book with ISBN '{book_isbn}' does not exist.")
+            except Exception as e:
+                messages.error(request, f"An error occurred: {e}")
+        else:
+            messages.error(request, "Invalid form data.")
+    return render(request, "admin_temp/issueBook.html", {'form': form})
 
 
 
