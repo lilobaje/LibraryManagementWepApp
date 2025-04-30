@@ -1,28 +1,47 @@
 {% extends 'admin_temp/base.html' %}
 
- <!-- Main content -->
- {% block main_content %} 
- <main class="content">
+{% block main_content %}
+<main class="content">
 
     <div class="container mt-4">
-        <form method="POST"> {% csrf_token %}
-            {% for i in form %}
-            <div class="form-group">
-                <br>
-              <label class="control-label col-xs-4">{{ i.label_tag }}</label>
-              <div class="col-xs-8 mt-2">
-              {{ i }}
-               </div>
-            </div>
+        <h2>Issue Book</h2>
+
+        {# --- Add this section to display messages --- #}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# --- End messages section --- #}
+
+        <form method="POST">
+            {% csrf_token %}
+            {% for field in form %} {# Changed 'i' to 'field' for clarity #}
+                <div class="form-group">
+                    <br>
+                    {# Render label and input for each form field #}
+                    <label class="control-label col-xs-4">{{ field.label_tag }}</label>
+                    <div class="col-xs-8 mt-2">
+                        {{ field }}
+                        {# Display field errors #}
+                        {% if field.errors %}
+                            <ul class="errorlist">
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
             {% endfor %}
-        <button type="submit" class="btn btn-outline-primary mt-4">Issue Book</button>
+            <button type="submit" class="btn btn-outline-primary mt-4">Issue Book</button>
+        </form>
     </div>
-    </form>
- </main>
- 
- {% endblock main_content %}
-  <!-- /.content -->
-  
+</main>
+
+{% endblock main_content %}
 {% block js %}
-	
+    {# Add any specific JavaScript needed for this page here #}
 {% endblock js%}

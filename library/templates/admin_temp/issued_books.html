@@ -1,91 +1,101 @@
+{# your_app_name/templates/admin_temp/issued_books.html #}
 {% extends 'admin_temp/base.html' %}
+{% load static %} {# Load static if you need it #}
 
- <!-- Main content -->
- {% block main_content %} 
- <main class="content">
+{% block main_content %}
+<main class="content">
 
-   
-    <div class="row">
-      <div class="dropdown">
-      
-       
-      </div> 
-            <div class="card flex-fill">
-                <div class="card-header">
+    <div class="container mt-4"> {# Added container for better spacing #}
+         <h2>Issued Books</h2>
 
-                    <h5 class="card-title mb-0">Issued Books</h5>
-                </div>
-                <div class="table-responsive">
-                
-                <table class="table table-hover my-0">
-                    <thead>
-                        <tr>
-                            <th>Sr.No</th>
-                      <th>Name</th>
-                            <th >ID</th>
-                            <th >Book Name</th>
-                            <th >ISBN</th>
-                            <th >Real_ID</th>
-                            <th >Issued Date</th>
-                            <th >Expiry-Date</th>
-                            <th >Status</th>
-                            <th >Action</th>
+        {# --- Display Messages --- #}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# --- End Messages --- #}
 
+        <div class="row">
+            <div class="col-12"> {# Use full column width #}
+                <div class="card flex-fill">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Issued Books</h5>
+                    </div>
+                    <div class="table-responsive">
 
-                      
-                         
-                            <th>Delete</th>
-                            
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for i in details %}
-                        <tr>
-                            <td>{{forloop.counter}}.</td>
-                            
-                            <td>{{i.0}}</td>
-                            <td>{{i.1}}</td>
-                            <td>{{i.2}}</td>
-                            <td>{{i.3}}</td>
-                            <td>{{i.4}}</td>
-                            <td>{{i.5}}</td>
-                            <td>{{i.6}}</td>
-                            <td>{{i.7}}</td>
-              
-                     <td>
-                        <div class="btn-group" role="group" aria-label="Button group with nested dropdown">
-                            
-                            <div class="btn-group" role="group">
-                              <button onclick="myFunction()" class="dropbtn" type="button" aria-haspopup="true" aria-expanded="false">
-                                Status
-                              </button>
-                              
-                              <div id="myDropdown" class="dropdown-content">
-                                <a class="dropdown-item" href="/returned/{{i.4}}/">Returned</a>
-                                <a class="dropdown-item" href="/not_returned/{{i.4}}/">In Possession</a>
-                              </div>
-                            </div>
-                          </div>
-                     </td>
-                            
-                         
-                            <td><a href="/delete_issued/{{i.4}}/" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this issued book details?')">Delete</a></td>
-                            
-                        </tr>
-                      
-                        {% endfor %}
+                        <table class="table table-hover my-0">
+                            <thead>
+                                <tr>
+                                    <th>Sr.No</th>
+                                    <th>Student Name</th> {# Changed from Name #}
+                                    <th>Student ID</th> {# Changed from ID #}
+                                    <th>Book Name</th>
+                                    <th>Book ISBN</th> {# Changed from ISBN, access via book object #}
+                                    <th>Issued Date</th>
+                                    <th>Expiry Date</th> {# Changed from Expiry-Date #}
+                                    <th>Status</th>
+                                    <th colspan="2">Actions</th> {# Combined Action and Delete headers #}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {# --- Updated: Loop through issuedBooks instead of details --- #}
+                                {% for issued_book in issuedBooks %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}.</td>
+                                        {# Access student details via the ForeignKey #}
+                                        <td>{{ issued_book.student.user.first_name }} {{ issued_book.student.user.last_name }}</td> {# Display full name #}
+                                        <td>{{ issued_book.student.adm_no }}</td> {# Use adm_no or user_id as appropriate #}
+                                        {# Access book details via the ForeignKey #}
+                                        <td>{{ issued_book.book.name }}</td>
+                                        <td>{{ issued_book.book.isbn }}</td>
+                                        {# Access issued book details directly #}
+                                        <td>{{ issued_book.issued_date }}</td>
+                                        <td>{{ issued_book.expiry_date }}</td>
+                                        <td>{{ issued_book.book_status }}</td>
 
-                     
-                    </tbody>
-                  
-                </table>
-          </div>
-          </div>
-        </div>
-       </div>
-    </div>
- 
- </main>
- 
- {% endblock main_content %}
-  <!-- /.content -->
+                                        {# Action buttons (Returned/In Possession) #}
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownStatus{{ issued_book.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    Change Status
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="dropdownStatus{{ issued_book.id }}">
+                                                    {# Use the correct URL names and pass the issued_book.id #}
+                                                    <li><a class="dropdown-item" href="{% url 'returned' issued_book.id %}">Returned</a></li>
+                                                    <li><a class="dropdown-item" href="{% url 'not_returned' issued_book.id %}">In Possession</a></li>
+                                                </ul>
+                                            </div>
+                                        </td>
+
+                                        {# Delete button #}
+                                        <td>
+                                            {# Use the correct URL name and pass the issued_book.id #}
+                                            <a href="{% url 'delete_issued' issued_book.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this issued book details?')">
+                                                Delete
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %} {# Message if issuedBooks is empty #}
+                                    <tr>
+                                        <td colspan="10">No books have been issued yet.</td>
+                                    </tr>
+                                {% endfor %}
+                                {# --- End Updated --- #}
+                            </tbody>
+                        </table>
+                    </div> {# End table-responsive #}
+                </div> {# End card #}
+            </div> {# End col #}
+        </div> {# End row #}
+    </div> {# End container #}
+
+</main>
+
+{% endblock main_content %}
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+    {# You might need Bootstrap JS for the dropdown to work #}
+{% endblock js%}

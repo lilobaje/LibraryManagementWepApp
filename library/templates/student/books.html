@@ -1,68 +1,85 @@
-{% extends 'student/base.html' %}
+{# your_app_name/templates/student/books.html #}
+{% extends 'student/base.html' %} {# Make sure this matches your base template #}
+{% load static %} {# Load static if needed #}
 
- <!-- Main content -->
- {% block main_content %} 
-<div class="row">
-      
-          <div class="card flex-fill">
-              <div class="card-header">
+{% block title %}My Issued Books{% endblock %} {# Set the page title #}
 
-                  <h5 class="card-title mb-0">Issued Books</h5>
-              </div>
-              <div class="table-responsive">
-              
-              <table class="table table-hover my-0">
-                  <thead>
-                      <tr>
-                          <th>Sr.No</th>
-                          <th >ID</th>
-                    <th>Name</th>
-                          
-                          <th >Book Name</th>
-                          <th >Book Author</th>
-                          <th >ISBN</th>
-                          
-                          <th >Issued Date</th>
-                          <th >Expiry-Date</th>
-                          <th> Status </th>
-                    
-                       
-                  
-                         
-                      </tr>
-                  </thead>
-                  <tbody>
-                    {% for i in li1 %}
-                      <tr>
-                          <td>{{forloop.counter}}.</td>
-                          
-                          <td>{{i.0}}</td>
-                          <td>{{i.1}}</td>
-                          <td>{{i.2}}</td>
-                          <td>{{i.3}}</td>
-                          <td>{{i.4}}</td>
-                          <td>{{i.5}}</td>
-                          <td>{{i.6}}</td>
-                          <td> <a class="btn-success"> {{i.7}}</a>  </td>
-                          
+{% block main_content %}
+<div class="container mt-4"> {# Added container for better spacing #}
+    <h2>My Issued Books</h2>
 
-                                               
-                     {% endfor %}
+    {# --- Display Messages --- #}
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {# --- End Messages --- #}
 
-                    
-                      </tr>
-                    
-                     
-                  </tbody>
-                
-              </table>
-        </div>
-        </div>
-      </div>
-     </div>
-  </div>
+    <div class="row">
+        <div class="col-12"> {# Use full column width #}
+            <div class="card flex-fill">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Issued Books</h5>
+                </div>
+                <div class="table-responsive">
+
+                    <table class="table table-hover my-0">
+                        <thead>
+                            <tr>
+                                <th>Sr.No</th>
+                                {# No need for Student ID/Name here as it's the student's own page #}
+                                <th>Book Name</th>
+                                <th>Book Author</th>
+                                <th>Book ISBN</th> {# Changed from ISBN #}
+                                <th>Issued Date</th>
+                                <th>Expiry Date</th> {# Changed from Expiry-Date #}
+                                <th>Status</th>
+                                {# No actions needed for the student view of issued books #}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {# --- Updated: Loop through issuedBooks instead of li1 --- #}
+                            {% for issued_book in issuedBooks %}
+                                <tr>
+                                    <td>{{ forloop.counter }}.</td>
+                                    {# Access book details via the ForeignKey #}
+                                    <td>{{ issued_book.book.name }}</td>
+                                    <td>{{ issued_book.book.author }}</td>
+                                    <td>{{ issued_book.book.isbn }}</td>
+                                    {# Access issued book details directly #}
+                                    <td>{{ issued_book.issued_date }}</td>
+                                    <td>{{ issued_book.expiry_date }}</td>
+                                    <td>
+                                         {# Display status with basic styling #}
+                                        {% if issued_book.book_status == "Active" %}
+                                            <span class="badge bg-success">{{ issued_book.book_status }}</span>
+                                        {% elif issued_book.book_status == "Returned" %}
+                                             <span class="badge bg-secondary">{{ issued_book.book_status }}</span>
+                                        {% else %}
+                                             {{ issued_book.book_status }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %} {# Message if issuedBooks is empty #}
+                                <tr>
+                                    <td colspan="7">You currently have no books issued.</td> {# Adjusted colspan based on columns #}
+                                </tr>
+                            {% endfor %}
+                            {# --- End Updated --- #}
+                        </tbody>
+                    </table>
+                </div> {# End table-responsive #}
+            </div> {# End card #}
+        </div> {# End col #}
+    </div> {# End row #}
+</div> {# End container #}
 
 </main>
 
- {% endblock main_content %}
-  <!-- /.content -->
+{% endblock main_content %}
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+{% endblock js%}

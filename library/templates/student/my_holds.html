@@ -1,0 +1,65 @@
+{# your_app_name/templates/student/my_holds.html #}
+{% extends 'student/base.html' %} {# Make sure this matches your base template #}
+{% load static %} {# Load static if you need it for styling or images #}
+
+{% block title %}My Active Holds{% endblock %} {# Set the page title #}
+
+{% block main_content %}
+<div class="container mt-4">
+    <h2>My Active Holds</h2>
+
+    {# --- Display Messages --- #}
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {# --- End Messages --- #}
+
+    {% if active_holds %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">Book Title</th>
+                    <th scope="col">Author</th>
+                    <th scope="col">ISBN</th>
+                    <th scope="col">Hold Placed On</th>
+                    <th scope="col">Actions</th> {# Now for Cancel button #}
+                </tr>
+            </thead>
+            <tbody>
+                {% for hold in active_holds %}
+                    <tr>
+                        <td>{{ hold.book.name }}</td> {# Access book name via the ForeignKey #}
+                        <td>{{ hold.book.author }}</td> {# Access author via the ForeignKey #}
+                        <td>{{ hold.book.isbn }}</td>   {# Access ISBN via the ForeignKey #}
+                        <td>{{ hold.place_date }}</td>
+                        <td>
+                            {# --- Updated: Link to trigger the cancel_hold view --- #}
+                            {# Using a link styled as a button #}
+                            <a href="{% url 'cancel_hold' hold.id %}" class="btn btn-sm btn-danger"
+                               onclick="return confirm('Are you sure you want to cancel your hold on \'{{ hold.book.name }}\'?');">
+                                Cancel Hold
+                            </a>
+                            {% comment %}
+                                The onclick confirm is a simple client-side check.
+                                For a more robust solution, you might use a small form and POST request.
+                            {% endcomment %}
+                            {# --- End Updated --- #}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You currently have no active holds.</p>
+    {% endif %}
+
+</div>
+{% endblock main_content %}
+
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+{% endblock js%}

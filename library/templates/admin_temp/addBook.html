@@ -1,77 +1,140 @@
 {% extends 'admin_temp/base.html' %}
+{% load static %} {# Load static if you need to link to CSS/JS or default images #}
 
- <!-- Main content -->
- {% block main_content %} 
- <main class="content">
+{% block main_content %}
+<main class="content">
 
-    <div class="row">
-        <div class="col-12 col-lg-12">
-           <form role="form" method="POST" enctype="multipart/form-data">
+    <div class="container mt-4">
+        <h2>Add New Book</h2>
 
-            {% csrf_token %}
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Book Title</h5>
-                </div>
-                <div class="card-body">
-                    <input type="text" class="form-control" placeholder="Enter Book Title" name="name">
-                </div>
+        {# --- Display Messages --- #}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# --- End Messages --- #}
 
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Author</h5>
-                </div>
-                <div class="card-body">
-                    <input type="text" class="form-control" placeholder="Enter Authors Name" name="author">
-                </div>
+        <div class="row">
+            <div class="col-12 col-lg-12">
+                {# Ensure enctype="multipart/form-data" for file uploads #}
+                <form role="form" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
 
-               
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Book Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group mb-3">
+                                <label class="form-label">Book Title</label>
+                                <input type="text" class="form-control" placeholder="Enter Book Title" name="name" required>
+                            </div>
 
-                <div class="card-header">
-                    <h5 class="card-title mb-0">ISBN Number</h5>
-                </div>
-                <div class="card-body">
-                    <input type="text" class="form-control" placeholder="Enter Book ISBN" name="isbn">
-                </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">Author</label>
+                                <input type="text" class="form-control" placeholder="Enter Authors Name" name="author" required>
+                            </div>
 
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Book Image</h5>
-                </div>
-                <div class="card-body">
-                    <input class="form-control form-control-lg" type="file" name="image" placeholder="Select Display Picture">
-                </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">ISBN Number</label>
+                                <input type="text" class="form-control" placeholder="Enter Book ISBN" name="isbn" required>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Book Image</label>
+                                <input class="form-control" type="file" name="image" required>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Book Description</label>
+                                {# Changed to textarea for potentially longer descriptions #}
+                                <textarea class="form-control" placeholder="Enter Description" name="description" rows="3"></textarea>
+                            </div>
+
+                            {# --- Added fields for new Book model attributes --- #}
+                            <div class="form-group mb-3">
+                                <label class="form-label">Publication Date (e.g., 2023 or January 2023)</label>
+                                <input type="text" class="form-control" placeholder="Enter Publication Date" name="publication_date">
+                            </div>
+
+                             <div class="form-group mb-3">
+                                <label class="form-label">Publisher</label>
+                                <input type="text" class="form-control" placeholder="Enter Publisher Name" name="publisher">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Editor</label>
+                                <input type="text" class="form-control" placeholder="Enter Editor Name" name="editor">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Edition</label>
+                                <input type="text" class="form-control" placeholder="Enter Edition (e.g., 1st Edition)" name="edition">
+                            </div>
+
+                             <div class="form-group mb-3">
+                                <label class="form-label">Language</label>
+                                <input type="text" class="form-control" placeholder="Enter Language (e.g., English)" name="language">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Pages</label>
+                                {# Consider changing model field to PositiveIntegerField and template input type to number #}
+                                <input type="text" class="form-control" placeholder="Enter Number of Pages" name="pages">
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label">Quantity (Number of Copies)</label>
+                                {# Consider changing model field to PositiveIntegerField and template input type to number #}
+                                <input type="number" class="form-control" placeholder="Enter Quantity" name="quantity" value="1" min="1" required>
+                            </div>
+                            {# --- End added fields --- #}
 
 
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Book Description</h5>
-                </div>
-                <div class="card-body">
-                    <input type="text" class="form-control" placeholder="Enter Description" name="description">
-                </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label">Category</label>
+                                {# Consider creating a Category model and linking with ForeignKey #}
+                                <select class="form-control" name="category">
+                                    <option value="Science">Science</option>
+                                    <option value="Art">Art</option>
+                                    <option value="Action">Action</option>
+                                    <option value="Poetry">Poetry</option>
+                                    <option value="Music">Music</option>
+                                     {# Add more categories as needed or populate dynamically #}
+                                </select>
+                            </div>
 
+                             {# --- Added field for Genres (Many-to-Many) --- #}
+                            <div class="form-group mb-3">
+                                <label class="form-label">Genres (Select multiple with Ctrl/Cmd + click)</label>
+                                {# The 'genres' variable is passed from the add_book view #}
+                                <select class="form-control" name="genres" multiple>
+                                    {% for genre in genres %}
+                                        <option value="{{ genre.name }}">{{ genre.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {# --- End added field --- #}
 
+                        </div> {# End card-body #}
+                         <div class="card-footer">
+                             <button type="submit" class="btn btn-primary">Add Book</button>
+                         </div>
+                    </div> {# End card #}
 
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Category</h5>
-                </div>
-                <div class="card-body">
-                   <select class="form-control" name="category">
-                          <option>Science</option>
-                          <option>Art</option>
-                          <option>Action</option>
-                          <option>Poetry</option>
-                          <option>Music</option>
-                        </select>
-                </div>
-                <button type="submit" class="btn btn-outline-primary mt-4">Add Book</button>
+                </form>
             </div>
-
-        </form>
         </div>
 
-       
     </div>
- 
- </main>
- 
- {% endblock main_content %}
-  <!-- /.content -->
+
+</main>
+
+{% endblock main_content %}
+
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+{% endblock js%}

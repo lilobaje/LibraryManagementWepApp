@@ -1,0 +1,88 @@
+{# your_app_name/templates/book_detail.html #}
+{% extends 'student/base.html' %} {# Make sure this matches your base template file name #}
+{% load static %} {# If you need to load static files like CSS/JS #}
+
+{% block title %}{{ book.name }}{% endblock %} {# Set the page title #}
+
+{% block main_content %}
+<div class="container mt-4">
+    {# --- Display Messages --- #}
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {# --- End Messages --- #}
+
+    <div class="row">
+        <div class="col-md-4">
+            {# Display book cover image #}
+            {% if book.image %}
+                <img src="{{ book.image.url }}" class="img-fluid" alt="{{ book.name }} Cover">
+            {% else %}
+                {# Replace with a path to a default image if you have one #}
+                <img src="{% static 'path/to/default_cover_image.png' %}" class="img-fluid" alt="No Cover Available">
+            {% endif %}
+        </div>
+        <div class="col-md-8">
+            <h1>{{ book.name }}</h1>
+            <p><strong>Author:</strong> {{ book.author }}</p>
+            <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+            <p><strong>Publisher:</strong> {{ book.publisher }}</p>
+            <p><strong>Publication Date:</strong> {{ book.publication_date }}</p>
+            <p><strong>Edition:</strong> {{ book.edition }}</p>
+            <p><strong>Language:</strong> {{ book.language }}</p>
+            <p><strong>Pages:</strong> {{ book.pages }}</p>
+            <p><strong>Category:</strong> {{ book.category }}</p> {# Consider displaying linked category name if using ForeignKey #}
+            <p><strong>Genres:</strong>
+                {% for genre in book.genres.all %}
+                    {{ genre.name }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+            <p><strong>Description:</strong> {{ book.description }}</p>
+
+            <h3>Availability:</h3>
+            <p>{{ book.available_quantity }} out of {{ book.quantity }} copies available</p>
+
+            {# --- Hold/Reservation Logic --- #}
+            {% if user.is_authenticated %} {# Only show hold options to logged-in users #}
+                {% if book.available_quantity == 0 %} {# Show hold button only if not available #}
+                    {# --- Updated: Use the is_student_user variable from the view --- #}
+                    {% if is_student_user %}
+                         {# Use the user_has_hold variable from the view #}
+                         {% if not user_has_hold %}
+                             <a href="{% url 'place_hold' book.id %}" class="btn btn-primary">Place Hold</a>
+                         {% else %}
+                             <p class="text-info">You have an active hold on this book.</p>
+                         {% endif %}
+                    {% else %}
+                         <p>Log in with a student account to place a hold.</p>
+                    {% endif %}
+                     {# --- End Updated --- #}
+                {% else %}
+                    <p class="text-success">This book is currently available for borrowing.</p>
+                    {# You might add a "Borrow" button here later #}
+                {% endif %}
+            {% else %}
+                <p><a href="{% url 'student_login' %}">Log in</a> with a student account to place a hold or borrow.</p> {# Use your student login URL name #}
+            {% endif %}
+            {# --- End Hold/Reservation Logic --- #}
+
+            {# --- Display Active Holds for this Book (Optional but helpful) --- #}
+            {# Updated: Use the `active_holds` variable passed from the view #}
+            {% if active_holds %}
+                 <p>{{ active_holds.count }} person(s) currently have a hold on this book.</p>
+                 {# You could add a button/link here to "View Hold Queue" which leads to another page #}
+            {% endif %}
+            {# --- End Display Active Holds --- #}
+
+        </div>
+    </div>
+</div>
+{% endblock main_content %}
+
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+{% endblock js%}

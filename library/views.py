@@ -1,339 +1,757 @@
-from library.forms import IssueBookForm
-from django.shortcuts import redirect, render,HttpResponse
-from django.http import HttpResponse, HttpResponseRedirect
-from django.db.models import Q
+from django.shortcuts import render, redirect, get_object_or_404, HttpResponse, HttpResponseRedirect
 from django.urls import reverse
-from django.shortcuts import redirect, render
-from .models import *
-from django.contrib.auth import authenticate, login, logout
 from django.db.models import Q
-from . import forms, models
-from datetime import date
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from datetime import date
+from . import forms, models # Assuming forms.py is in the same app directory
 
-    
+# Import necessary models
+from .models import Book, Student, IssuedBook, Hold, Genre, User
+
+# Helper function to check if a user is a student (based on having a related Student object)
+def is_student(user):
+    return hasattr(user, 'student')
+
 def index(request):
-    books=Book.objects.all()
-    return render(request, "index2.html" , {"books":books})
+    # Display books on the index page
+    books = Book.objects.all()
+    return render(request, "index2.html", {"books": books})
 
-@login_required(login_url = '/admin_login')
+@login_required(login_url='/student_login/') # Redirect to student login if not logged in
+def book_list(request):
+    # Display books on the index page
+    books = Book.objects.all()
+    return render(request, "student/book_list.html", {"books": books})
+
+@login_required(login_url='/admin_login')
 def add_book(request):
     if request.method == "POST":
-        name = request.POST['name']
-        author = request.POST['author']
-        isbn = request.POST['isbn']
-        category = request.POST['category']
-        image = request.FILES['image']
-        description = request.POST['description']
-        books = Book.objects.create(name=name, author=author, isbn=isbn, category=category, description=description, image=image)
-        books.save()
-        alert = True
-        return render(request, "admin_temp/addBook.html", {'alert':alert})
-    return render(request, "admin_temp/addBook.html")
+        name = request.POST.get('name')
+        author = request.POST.get('author')
+        isbn = request.POST.get('isbn')
+        category = request.POST.get('category') # Consider using a ForeignKey for category
+        description = request.POST.get('description', 'Description')
+        publication_date = request.POST.get('publication_date') # Added from model
+        publisher = request.POST.get('publisher') # Added from model
+        editor = request.POST.get('editor') # Added from model
+        edition = request.POST.get('edition') # Added from model
+        language = request.POST.get('language') # Added from model
+        pages = request.POST.get('pages') # Added from model
+        # Genres (Many-to-Many) will need to be handled separately after creating the book
+
+        image = None
+        if 'image' in request.FILES:
+            image = request.FILES['image']
+
+        # Get or create Genre objects
+        # Assuming genres are submitted as a list of names or IDs
+        genre_names = request.POST.getlist('genres') # Assuming multiple genres can be selected
+        genres = []
+        for genre_name in genre_names:
+             genre, created = Genre.objects.get_or_create(name=genre_name)
+             genres.append(genre)
+
+        try:
+            # When adding a book, initialize quantity and available_quantity
+            book = Book.objects.create(
+                name=name,
+                author=author,
+                isbn=isbn,
+                category=category, # Again, consider ForeignKey
+                description=description,
+                publication_date=publication_date,
+                publisher=publisher,
+                editor=editor,
+                edition=edition,
+                language=language,
+                pages=pages,
+                image=image,
+                quantity=request.POST.get('quantity', 1), # Allow setting quantity from form, default to 1
+                available_quantity=request.POST.get('quantity', 1) # Initially available quantity is total quantity
+            )
+            book.genres.set(genres) # Set the many-to-many relationship
+            messages.success(request, "Book added successfully!")
+            # Redirect to a new book form or book list
+            return redirect('add_book') # Stay on the add book page for another entry
+            # Or redirect to view_books: return redirect('view_books')
+
+        except Exception as e:
+            messages.error(request, f"Failed to add book: {e}")
+
+    # Fetch existing genres to display in the form
+    genres = Genre.objects.all()
+    return render(request, "admin_temp/addBook.html", {'genres': genres})
 
 
 @login_required(login_url='/admin_login')
 def edit_book(request, book_id):
-    user = User.objects.get(id=request.user.id)
-    book=Book.objects.get(id=book_id)
-    return render(request,"admin_temp/edit_book.html",{"user":user, 'book':book})
-
+    book = get_object_or_404(Book, id=book_id)
+    # Fetch all genres to display in the form for selection
+    genres = Genre.objects.all()
+    return render(request, "admin_temp/edit_book.html", {'book': book, 'genres': genres})
 
 
 @login_required(login_url='/admin_login')
 def edit_book_save(request):
-    if request.method!="POST":
+    if request.method != "POST":
         return HttpResponse("Method Not Allowed")
     else:
-        name = request.POST['name']
-        author = request.POST['author']
-        isbn = request.POST['isbn']
-        category = request.POST['category']
-        image = request.FILES['image']
-        description = request.POST['description']
+        book_id = request.POST.get('book_id') # Assume you pass book_id in a hidden input
+        book = get_object_or_404(Book, id=book_id)
+
+        book.name = request.POST.get('name')
+        book.author = request.POST.get('author')
+        # Decide if ISBN should be editable after creation
+        # book.isbn = request.POST.get('isbn')
+        book.category = request.POST.get('category') # Consider using a ForeignKey
+        book.description = request.POST.get('description', 'Description')
+        book.publication_date = request.POST.get('publication_date')
+        book.publisher = request.POST.get('publisher')
+        book.editor = request.POST.get('editor')
+        book.edition = request.POST.get('edition')
+        book.language = request.POST.get('language')
+        book.pages = request.POST.get('pages')
+
+        # Handle image update
+        if 'image' in request.FILES:
+            book.image = request.FILES['image']
+
+        # Update Genres (Many-to-Many)
+        genre_names = request.POST.getlist('genres')
+        genres = []
+        for genre_name in genre_names:
+             genre, created = Genre.objects.get_or_create(name=genre_name)
+             genres.append(genre)
+        book.genres.set(genres)
+
+        # Decide if quantity should be editable here or only through issue/return
+        # book.quantity = request.POST.get('quantity', book.quantity)
+        # Recalculate available_quantity if quantity is edited directly (complex)
+        # It's often simpler to manage quantity only via issue/return
 
         try:
-            books = Book.objects.create(name=name, author=author, isbn=isbn, category=category, description=description, image=image)
-            books.save()
-            alert = True
-            messages.success(request,"Successfully Edited Book")
-        except:
-            messages.error(request,"Failed to Edit Book")
-            return HttpResponseRedirect(reverse("view_books"))
-    return render(request,"admin_temp/books.html")
+            book.save()
+            messages.success(request, "Book updated successfully!")
+            return redirect('view_books') # Redirect to the book list after saving
+        except Exception as e:
+            messages.error(request, f"Failed to update book: {e}")
+            # Redirect back to the edit page or view books
+            return redirect('edit_book', book_id=book.id)
 
 
 def dash(request):
-    user=User.objects.all().count()
-    student_count=Student.objects.all().count()
-    books=Book.objects.all().count()
-    issuedbook=IssuedBook.objects.all().count()
-    return render(request,"admin_temp/dash.html",{"user":user, 'books':books, 'issuedbook':issuedbook, "student_count":student_count})
+    user_count = User.objects.all().count()
+    student_count = Student.objects.all().count()
+    books_count = Book.objects.all().count()
+    issued_books_count = IssuedBook.objects.filter(book_status='Active').count() # Count active issues
+    holds_count = Hold.objects.filter(is_active=True).count() # Count active holds
+
+    return render(request, "admin_temp/dash.html", {
+        "user_count": user_count,
+        'books_count': books_count,
+        'issued_books_count': issued_books_count,
+        "student_count": student_count,
+        "holds_count": holds_count,
+    })
 
 
-@login_required(login_url = '/admin_login')
+@login_required(login_url='/admin_login')
 def view_books(request):
     books = Book.objects.all()
-    return render(request, "admin_temp/books.html", {'books':books})
+    return render(request, "admin_temp/books.html", {'books': books})
 
-@login_required(login_url = '/admin_login')
+# Added book_detail view
+def book_detail(request, book_id):
+    """ Displays the details of a specific book. """
+    book = get_object_or_404(Book, id=book_id)
+
+    # --- Add variable to check if the user is a student ---
+    is_student_user = False
+    if request.user.is_authenticated:
+        is_student_user = hasattr(request.user, 'student')
+    # --- End added variable ---
+
+    # Fetch active holds for this book if you want to display the queue
+    active_holds = Hold.objects.filter(book=book, is_active=True).order_by('place_date')
+
+    # Determine if the logged-in user has an active hold on this book
+    user_has_hold = False
+    if request.user.is_authenticated and is_student_user: # Use the new variable here too
+         user_has_hold = Hold.objects.filter(book=book, student=request.user.student, is_active=True).exists()
+
+
+    context = {
+        'book': book,
+        'active_holds': active_holds,
+        'user_has_hold': user_has_hold,
+        'is_student_user': is_student_user, # <-- Pass the new variable to the template
+    }
+    return render(request, 'book_detail.html', context)
+
+@login_required(login_url='/admin_login')
 def view_students(request):
     students = Student.objects.all()
-    return render(request, "admin_temp/students.html", {'students':students})
+    return render(request, "admin_temp/students.html", {'students': students})
 
 
 def Search_student(request):
-    q = request.GET.get('q') if request.GET.get('q') != None else ''
-    students=Student.objects.filter(
-        Q(phone__icontains=q)       
-    
-    )
-    context = {'students':students }
-    return render(request,"admin_temp/students.html",context)
+    q = request.GET.get('q') if request.GET.get('q') is not None else ''
+    # Searching by phone, maybe add name, adm_no, etc.
+    students = Student.objects.filter(
+        Q(phone__icontains=q) |
+        Q(user__first_name__icontains=q) |
+        Q(user__last_name__icontains=q) |
+        Q(adm_no__icontains=q)
+        # Add more fields as needed for searching
+    ).distinct() # Use distinct to avoid duplicates if a student matches multiple Q conditions
+    context = {'students': students}
+    return render(request, "admin_temp/students.html", context)
 
 def Search_book(request):
-    q = request.GET.get('q') if request.GET.get('q') != None else ''
-    books=Book.objects.filter(
-        Q(isbn__icontains=q)       
-    
-    )
-    context = {'books':books }
-    return render(request,"admin_temp/books.html",context)
+    q = request.GET.get('q') if request.GET.get('q') is not None else ''
+    # Searching by isbn, maybe add name, author, genre, etc.
+    books = Book.objects.filter(
+        Q(isbn__icontains=q) |
+        Q(name__icontains=q) |
+        Q(author__icontains=q) |
+        Q(genres__name__icontains=q) # Searching by genre name (requires distinct)
+    ).distinct() # Use distinct to avoid duplicate books if they have multiple matching genres
+    context = {'books': books}
+    return render(request, "admin_temp/books.html", context)
 
 
-def returned(request,id):
-    bstatus=IssuedBook.objects.get(id=id)
-    bstatus.book_status="Returned"
-    bstatus.save()
+def returned(request, id):
+    """ Handles the return of an issued book. """
+    issued_book = get_object_or_404(IssuedBook, id=id)
+    book = issued_book.book # Get the related Book object
+
+    # Update the status of the issued book
+    issued_book.book_status = "Returned"
+    # Set the returned date (add a returned_date field to IssuedBook model)
+    # issued_book.returned_date = date.today() # Requires 'from datetime import date'
+    issued_book.save()
+
+    # Increment the available quantity of the book
+    book.available_quantity += 1
+    book.save()
+
+    # --- Hold System Integration (Check for holds and notify the next person) ---
+    # Find the oldest active hold for this book
+    next_hold = Hold.objects.filter(book=book, is_active=True).order_by('place_date').first()
+
+    if next_hold:
+        # You would implement a notification system here (e.g., sending an email)
+        # For now, let's just mark the hold as inactive (or delete it) and maybe add a message
+        # Instead of marking inactive here, you might transition the hold status
+        # or delete it upon successful notification and subsequent issue.
+        messages.info(request, f"Book '{book.name}' returned. {next_hold.student.user.username} was next in the hold queue.")
+        # Consider creating a new model/system for managing hold notifications or using a task queue
+
+
+    messages.success(request, f"Book '{book.name}' marked as returned.")
     return HttpResponseRedirect(reverse("view_issued_book"))
 
 
+def not_returned(request, id):
+    """ Reverts the status of an issued book to Active (if it was marked returned by mistake). """
+    # This might need more careful handling to decrement available_quantity if it was incremented
+    # when the book was incorrectly marked as returned.
+    issued_book = get_object_or_404(IssuedBook, id=id)
+    book = issued_book.book
 
-def not_returned(request,id):
-    bstatus=IssuedBook.objects.get(id=id)
-    bstatus.book_status="Active"
-    bstatus.save()
+    if issued_book.book_status == "Returned":
+         # If it was marked returned, decrement available_quantity as we are reverting the status
+         book.available_quantity -= 1
+         book.save()
+
+    issued_book.book_status = "Active"
+    # issued_book.returned_date = None # Reset returned date if you add that field
+    issued_book.save()
+    messages.warning(request, f"Book '{book.name}' status set back to Active.")
     return HttpResponseRedirect(reverse("view_issued_book"))
 
- 
+
 @login_required(login_url='/admin_login')
 def issue_book(request):
+    # Use the updated IssueBookForm
     form = forms.IssueBookForm()
     if request.method == "POST":
         form = forms.IssueBookForm(request.POST)
         if form.is_valid():
+            # Get the selected Book and Student objects directly from the cleaned form data
+            selected_book = form.cleaned_data['book']
+            selected_student = form.cleaned_data['student']
+
             try:
-                student_id = request.POST['name2']  # Assuming 'name2' holds the student's ID
-                book_isbn = request.POST['isbn2']    # Assuming 'isbn2' holds the book's ISBN
+                # --- Checks before issuing (uses the book object) ---
+                if selected_book.available_quantity <= 0:
+                    messages.error(request, f"Book '{selected_book.name}' is not available for issuing.")
+                    # Pass the form and relevant context back to the template
+                    students = Student.objects.all() # Need this for the student dropdown if not using ModelForm
+                    books = Book.objects.filter(available_quantity__gt=0) # Need this for book dropdown if not using ModelForm
+                    return render(request, "admin_temp/issueBook.html", {'form': form, 'students': students, 'books': books})
 
-                student = Student.objects.get(pk=student_id)  # Get the Student object
-                book = Book.objects.get(isbn=book_isbn)      # Get the Book object
+                # Optional: Check if the student has too many books issued
+                # issued_count = IssuedBook.objects.filter(student=selected_student, book_status='Active').count()
+                # if issued_count >= MAX_BOOKS_PER_STUDENT: # Define MAX_BOOKS_PER_STUDENT in settings
+                #     messages.error(request, f"{selected_student.user.username} has reached the maximum number of issued books.")
+                #     students = Student.objects.all()
+                #     books = Book.objects.filter(available_quantity__gt=0)
+                #     return render(request, "admin_temp/issueBook.html", {'form': form, 'students': students, 'books': books})
 
-                obj = models.IssuedBook()
-                obj.student = student  # Assign the Student object
-                obj.isbn = book.isbn    # Assign the book's ISBN
-                obj.book_status = "Active" # You might want to set a default status
-                obj.save()
-                alert = True
-                return render(request, "admin_temp/issueBook.html", {'obj': obj, 'alert': alert})
-            except Student.DoesNotExist:
-                messages.error(request, f"Student with ID '{student_id}' does not exist.")
-            except Book.DoesNotExist:
-                messages.error(request, f"Book with ISBN '{book_isbn}' does not exist.")
+                # Optional: Check if the student has outstanding fines preventing issue
+                # if selected_student.total_fines > 0:
+                #      messages.error(request, f"{selected_student.user.username} has outstanding fines.")
+                #      students = Student.objects.all()
+                #      books = Book.objects.filter(available_quantity__gt=0)
+                #      return render(request, "admin_temp/issueBook.html", {'form': form, 'students': students, 'books': books})
+
+                # --- Check for active holds and potentially remove the oldest one for this student/book ---
+                # If a student is being issued a book they had on hold, you might remove their hold here
+                active_hold = Hold.objects.filter(book=selected_book, student=selected_student, is_active=True).order_by('place_date').first()
+                if active_hold:
+                    # If the student had an active hold, mark it as completed or inactive
+                    active_hold.is_active = False # Or add a status like 'Completed'
+                    active_hold.save()
+                    messages.info(request, f"Hold for '{selected_book.name}' by {selected_student.user.username} has been fulfilled.")
+
+                # If checks pass, create the IssuedBook entry
+                issued_book = models.IssuedBook.objects.create(
+                    student=selected_student, # Use the student object
+                    book=selected_book,     # Use the book object
+                    book_status="Active" # Set initial status
+                    # expiry_date is handled by the default in the model
+                )
+
+                # Decrement the available quantity of the book
+                selected_book.available_quantity -= 1
+                selected_book.save()
+
+                messages.success(request, f"Book '{selected_book.name}' issued to {selected_student.user.username}.")
+                # Redirect to view issued books or stay on the form
+                return redirect('issue_book') # Stay on the issue book page for another entry
+                # Or redirect to view_issued_book: return redirect('view_issued_book')
+
             except Exception as e:
                 messages.error(request, f"An error occurred: {e}")
+                import logging
+                logging.exception("Error issuing book")
+                # Pass the form and context back to the template on error
+                students = Student.objects.all()
+                books = Book.objects.filter(available_quantity__gt=0)
+                return render(request, "admin_temp/issueBook.html", {'form': form, 'students': students, 'books': books})
         else:
             messages.error(request, "Invalid form data.")
-    return render(request, "admin_temp/issueBook.html", {'form': form})
+            # Pass the form and context back to the template on invalid form
+            students = Student.objects.all()
+            books = Book.objects.filter(available_quantity__gt=0)
+            return render(request, "admin_temp/issueBook.html", {'form': form, 'students': students, 'books': books})
 
+    # If GET request or form is invalid, render the form
+    # You'll need to pass students and books to the template for the form fields
+    students = Student.objects.all()
+    books = Book.objects.filter(available_quantity__gt=0) # Only show books with available copies
+    return render(request, "admin_temp/issueBook.html", {'form': form, 'students': students, 'books': books})
+@login_required(login_url='/student_login')
+def cancel_hold(request, hold_id):
+    """ Allows a student to cancel their active hold. """
+    user = request.user
 
+    # Ensure the user is a student
+    if not hasattr(user, 'student'):
+        messages.error(request, "You do not have a student account.")
+        return redirect('index') # Redirect to a safe page
 
-@login_required(login_url = '/admin_login')
+    student = user.student
+
+    # Get the hold object or return 404 if it doesn't exist
+    # Also ensure the hold belongs to the logged-in student and is active
+    try:
+        hold = Hold.objects.get(id=hold_id, student=student, is_active=True)
+    except Hold.DoesNotExist:
+        messages.error(request, "Hold not found or cannot be cancelled.")
+        return redirect('my_holds') # Redirect back to the My Holds page
+
+    # --- Cancel the hold ---
+    hold.is_active = False # Mark the hold as inactive instead of deleting
+    hold.save()
+    # Alternatively, you could delete the hold: hold.delete()
+    # Marking as inactive retains a history of holds placed.
+
+    messages.success(request, f"Your hold on '{hold.book.name}' has been cancelled.")
+
+    return redirect('my_holds') # Redirect back to the My Holds page
+
+@login_required(login_url='/admin_login')
 def view_issued_book(request):
-    issuedBooks = IssuedBook.objects.all()
-    details = []
-    for i in issuedBooks:
-
-        books = list(models.Book.objects.filter(isbn=i.isbn))
-        students = list(models.Student.objects.filter(user=i.student_id))
-        bank=list(models.IssuedBook.objects.filter(id=i.id))
-        DANTE=list(models.IssuedBook.objects.filter(issued_date=i.issued_date))
-        DANTE2=list(models.IssuedBook.objects.filter(expiry_date=i.expiry_date))
-        DANTE3=list(models.IssuedBook.objects.filter(book_status=i.book_status))
-        i=0
-        for l in books:
-            t=(students[i].user,students[i].user_id,books[i].name, books[i].isbn, bank[i].id,
-            DANTE[i].issued_date, DANTE2[i].expiry_date, DANTE3[i].book_status)
-            i=i+1
-            details.append(t)
-
-    return render(request, "admin_temp/issued_books.html", {'issuedBooks':issuedBooks, 'details':details})
+    """ View for admins/librarians to see all issued books. """
+    issued_books = IssuedBook.objects.all().select_related('student__user', 'book') # Optimize queries
+    # The complex loop to build 'details' is removed, you can access related objects directly in the template
+    return render(request, "admin_temp/issued_books.html", {'issuedBooks': issued_books})
 
 
-
-@login_required(login_url = '/student_login')
+@login_required(login_url='/student_login')
 def student_issued_books(request):
-    student = Student.objects.filter(user_id=request.user.id)
-    issuedBooks = IssuedBook.objects.filter(student_id=student[0].user_id)
-    li1 = []
-  
+    """ View for students to see their issued books. """
+    # Get the student object for the logged-in user
+    try:
+        student = request.user.student
+    except Student.DoesNotExist:
+        messages.error(request, "User is not a student.")
+        return redirect('index') # Redirect to a safe page
 
-    for i in issuedBooks:
-        books = Book.objects.filter(isbn=i.isbn)
-        DANTE=list(models.IssuedBook.objects.filter(issued_date=i.issued_date))
-        DANTE2=list(models.IssuedBook.objects.filter(expiry_date=i.expiry_date))
-        DANTE3=list(models.IssuedBook.objects.filter(book_status=i.book_status))
-       
-        for book in books:
-            t=(request.user.id, request.user.get_full_name, book.name,book.author, books[0].isbn , DANTE[0].issued_date, DANTE2[0].expiry_date, DANTE3[0].book_status)
-            li1.append(t)
+    # Get issued books for this student, optimizing queries
+    issued_books = IssuedBook.objects.filter(student=student).select_related('book')
 
-    return render(request,'student/books.html',{'li1':li1})
+    # The complex loop to build 'li1' is removed, you can access related objects directly in the template
+    return render(request, 'student/books.html', {'issuedBooks': issued_books})
 
-@login_required(login_url = '/student_login')
+# Added the my_holds view
+@login_required(login_url='/student_login') # Ensure only logged-in students can access
+def my_holds(request):
+    """ Displays the active holds for the logged-in student. """
+    user = request.user
+
+    # Ensure the user is a student
+    if not hasattr(user, 'student'):
+        messages.error(request, "You do not have a student account.")
+        return redirect('index') # Redirect to a safe page
+
+    student = user.student
+
+    # Get all active holds for this student, ordered by the date they were placed
+    active_holds = Hold.objects.filter(student=student, is_active=True).order_by('place_date')
+
+    context = {
+        'active_holds': active_holds
+    }
+    return render(request, 'student/my_holds.html', context) # We will create/update this template
+
+# Added the place_hold view
+@login_required
+def place_hold(request, book_id):
+    book = get_object_or_404(Book, id=book_id)
+    user = request.user
+
+    # Ensure the user is a student
+    if not hasattr(user, 'student'):
+        messages.error(request, "Only students can place holds.")
+        # You might want to redirect to student login or the index page if not a student
+        return redirect('book_detail', book_id=book.id)
+    student = user.student
+
+    # --- Add checks before placing the hold ---
+
+    # Check if the book is available (no need for a hold if available)
+    if book.available_quantity > 0:
+        messages.info(request, f"Book '{book.name}' is currently available. No need to place a hold.")
+        return redirect('book_detail', book_id=book.id)
+
+    # Check if the student already has an active hold on this book
+    existing_hold = Hold.objects.filter(book=book, student=student, is_active=True).exists()
+    if existing_hold:
+        messages.info(request, f"You already have an active hold on '{book.name}'.")
+        return redirect('book_detail', book_id=book.id)
+
+    # Optional: Check if the student currently has this book issued
+    # You might not want them to place a hold if they already have a copy
+    # current_issue = IssuedBook.objects.filter(book=book, student=student, book_status='Active').exists()
+    # if current_issue:
+    #     messages.info(request, f"You currently have '{book.name}' issued.")
+    #     return redirect('book_detail', book_id=book.id)
+
+
+    # If checks pass, create the hold
+    Hold.objects.create(book=book, student=student, is_active=True) # Ensure is_active is True by default
+    messages.success(request, f"A hold has been placed on '{book.name}'.")
+
+    return redirect('book_detail', book_id=book.id)
+
+
+@login_required(login_url='/student_login')
 def profile(request):
-    return render(request, "student/studentHome.html")
+    # Fetch the student object for the logged-in user
+    try:
+        student = request.user.student
+    except Student.DoesNotExist:
+        messages.error(request, "User is not a student.")
+        return redirect('index') # Redirect to a safe page
 
-@login_required(login_url = '/student_login')
+    return render(request, "student/studentHome.html", {'student': student})
+
+
+@login_required(login_url='/student_login')
 def edit_profile(request):
-    student = Student.objects.get(user=request.user)
-    if request.method == "POST":
-        email = request.POST['email']
-        phone = request.POST['phone']
-        branch = request.POST['branch']
-        classroom = request.POST['classroom']
-        adm_no = request.POST['roll_no']
-        image = request.FILES['image']
+    """ Allows students to edit their profile information. """
+    try:
+        student = request.user.student
+    except Student.DoesNotExist:
+        messages.error(request, "User is not a student.")
+        return redirect('index') # Redirect to a safe page
 
-        student.user.email = email
-        student.image = image
-        student.phone = phone
-        student.branch = branch
-        student.classroom = classroom
-        student.adm_no  = adm_no 
-        student.user.save()
-        student.save()
-        alert = True
-        return render(request, "student/edit.html", {'alert':alert})
-    return render(request, "student/edit.html")
+    if request.method == "POST":
+        # Be cautious about which fields students can edit.
+        # Avoid letting them change core User fields like username or email directly this way.
+        # It's better to use Django Forms for validation and cleaner handling.
+
+        # Updating User fields (handle with care or use a User Update Form)
+        # request.user.email = request.POST.get('email') # Consider using EmailField in Student or User model
+        # request.user.save()
+
+        student.phone = request.POST.get('phone')
+        student.branch = request.POST.get('branch')
+        student.classroom = request.POST.get('classroom')
+        student.adm_no = request.POST.get('roll_no') # Mismatch with model field name 'adm_no' vs 'roll_no'
+        # Handle image update
+        if 'image' in request.FILES:
+             student.image = request.FILES['image']
+
+        try:
+            student.save()
+            messages.success(request, "Profile updated successfully!")
+            return redirect('profile') # Redirect back to the profile page
+        except Exception as e:
+            messages.error(request, f"Failed to update profile: {e}")
+            # Redirect back to the edit page with current data
+            return render(request, "student/edit.html", {'student': student}) # Pass student object
+
+    # If GET request, display the current profile data in the form
+    return render(request, "student/edit.html", {'student': student})
+
 
 def delete_book(request, myid):
-    books = Book.objects.get(id=myid)
-    books.delete()
-    return redirect("/view_books")
+    """ Deletes a book. Consider implications for issued books and holds. """
+    book = get_object_or_404(Book, id=myid)
+    # Before deleting a book, you might want to check if it has active issues or holds
+    if IssuedBook.objects.filter(book=book, book_status='Active').exists():
+        messages.error(request, f"Cannot delete book '{book.name}' as it has active issues.")
+        return redirect("view_books")
+    if Hold.objects.filter(book=book, is_active=True).exists():
+         messages.error(request, f"Cannot delete book '{book.name}' as it has active holds.")
+         return redirect("view_books")
+
+    try:
+        book.delete()
+        messages.success(request, f"Book '{book.name}' deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Failed to delete book '{book.name}': {e}")
+
+    return redirect("view_books")
+
 
 def delete_student(request, myid):
-    students = Student.objects.get(id=myid)
-    students.delete()
-    return redirect("/view_students")
+    """ Deletes a student. Consider implications for issued books and fines. """
+    student = get_object_or_404(Student, id=myid)
+    # Before deleting a student, you might want to check if they have active issues or holds
+    if IssuedBook.objects.filter(student=student, book_status='Active').exists():
+        messages.error(request, f"Cannot delete student '{student.user.username}' as they have active issues.")
+        return redirect("view_students")
+    if Hold.objects.filter(student=student, is_active=True).exists():
+         messages.error(request, f"Cannot delete student '{student.user.username}' as they have active holds.")
+         return redirect("view_students")
+    # Also consider outstanding fines
+
+    try:
+        # Deleting the Student object will also delete the related User object due to CASCADE
+        student.delete()
+        messages.success(request, f"Student '{student.user.username}' deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Failed to delete student '{student.user.username}': {e}")
+
+    return redirect("view_students")
+
 
 def delete_issued(request, id):
-    issuedbook = IssuedBook.objects.get(id=id)
-    issuedbook.delete()
-    return redirect("/view_books")
+    """ Deletes an issued book entry. Should increment available quantity. """
+    issued_book = get_object_or_404(IssuedBook, id=id)
+    book = issued_book.book
+
+    try:
+        # If the issued book was active, increment available quantity before deleting
+        if issued_book.book_status == 'Active':
+             book.available_quantity += 1
+             book.save()
+
+        issued_book.delete()
+        messages.success(request, "Issued book entry deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Failed to delete issued book entry: {e}")
+
+    return redirect("view_issued_book")
+
 
 def change_password(request):
+    # This view seems fine for changing the logged-in user's password
     if request.method == "POST":
-        current_password = request.POST['current_password']
-        new_password = request.POST['new_password']
-        try:
-            u = User.objects.get(id=request.user.id)
-            if u.check_password(current_password):
-                u.set_password(new_password)
-                u.save()
-                alert = True
-                return render(request, "student/changepsw.html", {'alert':alert})
-            else:
-                currpasswrong = True
-                return render(request, "student/changepsw.html", {'currpasswrong':currpasswrong})
-        except:
-            pass
+        current_password = request.POST.get('current_password')
+        new_password = request.POST.get('new_password')
+
+        # Basic validation
+        if not current_password or not new_password:
+             messages.error(request, "Please fill in all fields.")
+             return render(request, "student/changepsw.html")
+
+        user = request.user # Use request.user for the currently logged-in user
+
+        if user.check_password(current_password):
+            user.set_password(new_password)
+            user.save()
+            messages.success(request, "Password changed successfully!")
+            # Consider logging the user out after password change for security
+            # logout(request)
+            # return redirect('login_url') # Redirect to login page
+            return render(request, "student/changepsw.html") # Or redirect to profile
+        else:
+            messages.error(request, "Incorrect current password.")
+            return render(request, "student/changepsw.html")
+
     return render(request, "student/changepsw.html")
 
-def student_registration(request):
-    if request.method == "POST":
-        username = request.POST['username']
-        first_name = request.POST['first_name']
-        last_name = request.POST['last_name']
-        email = request.POST['email']
-        phone = request.POST['phone']
-        branch = request.POST['branch']
 
-        classroom = request.POST['classroom']
-        image = request.FILES['image']
-    
-                   
-        password = request.POST['password']
-        confirm_password = request.POST['confirm_password']
+def student_registration(request):
+    """ Handles student registration and creates User and Student objects. """
+    if request.method == "POST":
+        # Get data from the form
+        username = request.POST.get('username')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        branch = request.POST.get('branch')
+        classroom = request.POST.get('classroom')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+
+        image = None
+        if 'image' in request.FILES:
+             image = request.FILES['image']
+
+        # Basic validation
+        if not all([username, first_name, last_name, email, phone, branch, classroom, password, confirm_password]):
+             messages.error(request, "Please fill in all required fields.")
+             # Return to the form with entered data? Requires careful handling or using Django Forms.
+             return render(request, "new_student_regform.html")
 
         if password != confirm_password:
-            passnotmatch = True
-            return render(request, "student/register.html", {'passnotmatch':passnotmatch})
+            messages.error(request, "Passwords do not match.")
+            return render(request, "new_student_regform.html")
 
-        user = User.objects.create_user(username=username, email=email, password=password,first_name=first_name, last_name=last_name)
-        student = Student.objects.create(user=user, phone=phone, branch=branch, classroom=classroom, image=image)
-   
-        user.save()
-        student.save()
-        alert = True
-        return render(request, "new_student_regform.html", {'alert':alert})
+        # Check if username or email already exists
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username already exists.")
+            return render(request, "new_student_regform.html")
+        if User.objects.filter(email=email).exists():
+             messages.error(request, "Email already exists.")
+             return render(request, "new_student_regform.html")
+
+
+        try:
+            # Create the User object
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
+            user.save() # Save the User object
+
+            # Create the related Student object
+            student = Student.objects.create(
+                user=user, # Link to the created User
+                phone=phone,
+                branch=branch,
+                classroom=classroom,
+                image=image,
+                # adm_no is handled by the default in the model
+                # address, guardian_name, guardian_phone are not in the form?
+            )
+            student.save() # Save the Student object
+
+            messages.success(request, "Student registered successfully! You can now log in.")
+            # Redirect to the login page
+            return redirect('student_login') # Assuming you have a URL named 'student_login'
+
+        except Exception as e:
+            messages.error(request, f"An error occurred during registration: {e}")
+            # Log the error for debugging
+            import logging
+            logging.exception("Student registration failed")
+
+    # If GET request, render the empty form
     return render(request, "new_student_regform.html")
+
 
 @csrf_exempt
 def check_email_exist(request):
-    email=request.POST.get("email")
-    user_obj=User.objects.filter(email=email).exists()
-    if user_obj:
-        return HttpResponse(True)
-    else:
-        return HttpResponse(False)
+    """ AJAX view to check if an email already exists. """
+    if request.method == "POST":
+        email = request.POST.get("email")
+        # Exclude the current user's email if they are editing their profile
+        # This simple check is for registration only
+        user_exists = User.objects.filter(email=email).exists()
+        return HttpResponse(user_exists)
+    return HttpResponse("Invalid request method.")
 
 @csrf_exempt
 def check_username_exist(request):
-    username=request.POST.get("username")
-    user_obj=User.objects.filter(username=username).exists()
-    if user_obj:
-        return HttpResponse(True)
-    else:
-        return HttpResponse(False)
+    """ AJAX view to check if a username already exists. """
+    if request.method == "POST":
+        username = request.POST.get("username")
+         # Exclude the current user's username if they are editing their profile
+        user_exists = User.objects.filter(username=username).exists()
+        return HttpResponse(user_exists)
+    return HttpResponse("Invalid request method.")
 
 
 def student_login(request):
+    """ Handles student login. """
     if request.method == "POST":
-        username = request.POST['username']
-        password = request.POST['password']
+        username = request.POST.get('username')
+        password = request.POST.get('password')
         user = authenticate(username=username, password=password)
 
         if user is not None:
-            login(request, user)
-            if request.user.is_superuser:
-                return HttpResponse("You are not a student!!")
+            # Check if the user is associated with a Student profile
+            if hasattr(user, 'student'):
+                login(request, user)
+                messages.success(request, f"Welcome, {user.first_name}!")
+                return redirect("profile") # Redirect to the student profile page
             else:
-                return redirect("/profile")
+                messages.error(request, "You do not have a student account.")
         else:
-            alert = True
-            return render(request, "student/login.html", {'alert':alert})
+            messages.error(request, "Invalid username or password.")
+
+    # If GET request or authentication failed
     return render(request, "student/login.html")
 
 def admin_login(request):
+    """ Handles admin/superuser login. """
     if request.method == "POST":
-        username = request.POST['username']
-        password = request.POST['password']
+        username = request.POST.get('username')
+        password = request.POST.get('password')
         user = authenticate(username=username, password=password)
 
         if user is not None:
-            login(request, user)
-            if request.user.is_superuser:
-                return redirect("/add_book")
+            # Check if the user is a superuser
+            if user.is_superuser:
+                login(request, user)
+                messages.success(request, f"Welcome, Admin {user.username}!")
+                return redirect("dash") # Redirect to the admin dashboard
             else:
-                return HttpResponse("You are not an admin.")
+                messages.error(request, "You do not have administrator privileges.")
         else:
-            alert = True
-            return render(request, "admin_temp/login.html", {'alert':alert})
+            messages.error(request, "Invalid username or password.")
+
+    # If GET request or authentication failed
     return render(request, "admin_temp/login.html")
 
+
 def Logout(request):
+    """ Logs out the current user. """
     logout(request)
-    return redirect ("/")
+    messages.info(request, "You have been logged out.")
+    return redirect("index") # Redirect to the homepage"
