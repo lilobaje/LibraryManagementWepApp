@@ -1,13 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponse, HttpResponseRedirect
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_protect
 from django.urls import reverse
 from django.db.models import Q
+from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from datetime import date
 from . import forms, models # Assuming forms.py is in the same app directory
-
+from .forms import StudentForm
 # Import necessary models
 from .models import Book, Student, IssuedBook, Hold, Genre, User
 
@@ -610,101 +613,75 @@ def change_password(request):
 
     return render(request, "student/changepsw.html")
 
-
 def student_registration(request):
-    """ Handles student registration and creates User and Student objects. """
-    if request.method == "POST":
-        # Get data from the form
-        username = request.POST.get('username')
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        email = request.POST.get('email')
-        phone = request.POST.get('phone')
-        branch = request.POST.get('branch')
-        classroom = request.POST.get('classroom')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
+    if request.method == 'POST':
+        form = StudentForm(request.POST, request.FILES)
+        if form.is_valid():
+            data = form.cleaned_data
+            password = data.get('password')
+            confirm_password = data.get('confirm_password')
 
-        image = None
-        if 'image' in request.FILES:
-             image = request.FILES['image']
+            if password != confirm_password:
+                messages.error(request, "Passwords do not match.")
+            elif User.objects.filter(username=data['username']).exists():
+                messages.error(request, "Username already exists.")
+            elif User.objects.filter(email=data['email']).exists():
+                messages.error(request, "Email already exists.")
+            else:
+                user = User.objects.create_user(
+                    username=data['username'],
+                    email=data['email'],
+                    password=password,
+                    first_name=data['first_name'],
+                    last_name=data['last_name']
+                )
 
-        # Basic validation
-        if not all([username, first_name, last_name, email, phone, branch, classroom, password, confirm_password]):
-             messages.error(request, "Please fill in all required fields.")
-             # Return to the form with entered data? Requires careful handling or using Django Forms.
-             return render(request, "new_student_regform.html")
+                # Create Student profile
+                Student.objects.create(
+                    user=user,
+                    phone=data['phone'],
+                    branch=data['branch'],
+                    classroom=data['classroom'],
+                    image=request.FILES.get('image')
+                )
 
-        if password != confirm_password:
-            messages.error(request, "Passwords do not match.")
-            return render(request, "new_student_regform.html")
+                messages.success(request, "Student registered successfully.")
+                return redirect('student_login')  # ✅ Fixed redirect
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = StudentForm()
 
-        # Check if username or email already exists
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Username already exists.")
-            return render(request, "new_student_regform.html")
-        if User.objects.filter(email=email).exists():
-             messages.error(request, "Email already exists.")
-             return render(request, "new_student_regform.html")
+    icons = {
+        form['first_name']: "fa fa-user",
+        form['last_name']: "fa fa-user",
+        form['username']: "fa fa-user-tag",
+        form['email']: "fa fa-envelope",
+        form['phone']: "fa fa-phone",
+        form['branch']: "fa fa-school",
+        form['classroom']: "fa fa-chalkboard-teacher",
+        form['image']: "fa fa-image",
+        form['password']: "fa fa-lock",
+        form['confirm_password']: "fa fa-lock",
+    }
 
-
-        try:
-            # Create the User object
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                first_name=first_name,
-                last_name=last_name
-            )
-            user.save() # Save the User object
-
-            # Create the related Student object
-            student = Student.objects.create(
-                user=user, # Link to the created User
-                phone=phone,
-                branch=branch,
-                classroom=classroom,
-                image=image,
-                # adm_no is handled by the default in the model
-                # address, guardian_name, guardian_phone are not in the form?
-            )
-            student.save() # Save the Student object
-
-            messages.success(request, "Student registered successfully! You can now log in.")
-            # Redirect to the login page
-            return redirect('student_login') # Assuming you have a URL named 'student_login'
-
-        except Exception as e:
-            messages.error(request, f"An error occurred during registration: {e}")
-            # Log the error for debugging
-            import logging
-            logging.exception("Student registration failed")
-
-    # If GET request, render the empty form
-    return render(request, "new_student_regform.html")
-
+    return render(request, "new_student_regform.html", {"form": form, "fields": icons})
 
 @csrf_exempt
 def check_email_exist(request):
-    """ AJAX view to check if an email already exists. """
     if request.method == "POST":
         email = request.POST.get("email")
-        # Exclude the current user's email if they are editing their profile
-        # This simple check is for registration only
-        user_exists = User.objects.filter(email=email).exists()
-        return HttpResponse(user_exists)
-    return HttpResponse("Invalid request method.")
+        exists = User.objects.filter(email=email).exists()
+        return JsonResponse({'exists': exists})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 @csrf_exempt
 def check_username_exist(request):
-    """ AJAX view to check if a username already exists. """
     if request.method == "POST":
         username = request.POST.get("username")
-         # Exclude the current user's username if they are editing their profile
-        user_exists = User.objects.filter(username=username).exists()
-        return HttpResponse(user_exists)
-    return HttpResponse("Invalid request method.")
+        exists = User.objects.filter(username=username).exists()
+        return JsonResponse({'exists': exists})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
 def student_login(request):

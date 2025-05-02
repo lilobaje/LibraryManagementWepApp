@@ -47,7 +47,7 @@ rel="stylesheet"
                         <li class="nav-item"><a class="nav-link" href="/admin_login/">Admin</a></li>
                         <li class="nav-item"><a class="nav-link" href="/student_login/">Student</a></li>
                         <li class="nav-item"><a class="nav-link" href="/student_registration/">Register</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                        <!-- <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li> -->
                     </ul>
                 </div>
             </div>
@@ -57,7 +57,7 @@ rel="stylesheet"
             <div class="container">
                 <div class="masthead-subheading">Welcome To Our Library</div>
                 <div class="masthead-heading text-uppercase">It's Nice To Meet You</div>
-                <a class="btn btn-primary btn-xl text-uppercase" href="#services">Login</a>
+                <a class="btn btn-primary btn-xl text-uppercase" href="#services">Reader are Leaders</a>
 
 
                 
@@ -68,36 +68,7 @@ rel="stylesheet"
 
 
         </header>
-        <!-- Services-->
-        <main class="page projects-page">
-          <section class="portfolio-block projects-cards">
-              <div class="container">
-                  <div class="heading">
-                      <h2>BOOKS</h2>
-                  </div>
-                  
-                  <div class="row">
-                    {% for i in books %}
-                      <div class="col-md-6 col-lg-4" style="width: 250px;">
-                          <div class="card border-0"><a href="#"><img class="card-img-top scale-on-hover" src="{{ i.image.url }}" alt="Card Image"></a>
-                              <div class="card-body">
-                                  <h6><a href="#">{{i.name}}</a></h6>
-                                  <p class="text-muted card-text">{{ i.description }}</p>
-                              </div>
-                          </div>
-                      </div>
-                      {% endfor %}
-                  </div>
-                 
-              </div>
-          </section>
-      </main>    
-
-
-
-
-
-<script
+    <script
   type="text/javascript"
   src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.2.0/mdb.min.js"
 ></script>
