@@ -1,12 +1,26 @@
-{# your_app_name/templates/book_list.html #}
-{% extends 'student/base.html' %} {# Make sure this matches your base template file name #}
+{# your_app_name/templates/student/book_list.html #}
+{% extends 'student/base.html' %} {# Using the base template you specified #}
 {% load static %} {# If you need to load static files #}
 
 {% block title %}Book List{% endblock %} {# Set the page title #}
 
-{% block main_content %}
+{% block main_content %} {# Using main_content block as in your provided code #}
 <div class="container mt-4">
     <h2>Library Catalog</h2> {# Changed heading to be more general #}
+
+    {# --- Add Search Form --- #}
+    <div class="row mb-4"> {# Add some margin below the search form #}
+        <div class="col-md-6 offset-md-3"> {# Center the search form #}
+             <form method="GET" action="{% url 'Search_book' %}"> {# Use GET method for search and point to the Search_book URL #}
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search by ISBN, Title, Author, or Genre" name="q" value="{{ request.GET.q }}"> {# 'q' is the query parameter name, pre-fill if search was already performed #}
+                    <button class="btn btn-outline-secondary" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {# --- End Search Form --- #}
+
 
     {# --- Display Messages --- #}
     {% if messages %}
@@ -46,10 +60,14 @@
             {% endfor %}
         {% else %}
             <div class="col-12">
-                <p>No books available in the library yet.</p>
+                <p>No books found matching your criteria.</p> {# Updated message for search results #}
             </div>
         {% endif %}
     </div>
 
 </div>
-{% endblock main_content %}
+{% endblock main_content %} {# Using main_content block #}
+
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+{% endblock js%}

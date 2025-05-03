@@ -1,0 +1,87 @@
+{# your_app_name/templates/admin_temp/view_holds.html #}
+{% extends 'admin_temp/base.html' %} {# Make sure this matches your admin base template #}
+{% load static %} {# Load static if needed #}
+
+{% block title %}View All Holds{% endblock %} {# Set the page title #}
+
+{% block main_content %}
+<main class="content">
+
+    <div class="container mt-4">
+        <h2>All Student Holds</h2>
+
+        {# --- Display Messages --- #}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# --- End Messages --- #}
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card flex-fill">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Student Holds</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover my-0">
+                            <thead>
+                                <tr>
+                                    <th>Sr.No</th>
+                                    <th>Book Title</th>
+                                    <th>Student Name</th>
+                                    <th>Student ID</th>
+                                    <th>Hold Placed On</th>
+                                    <th>Status</th>
+                                    <th>Actions</th> {# For potential admin actions #}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if all_holds %}
+                                    {% for hold in all_holds %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}.</td>
+                                            {# Access book and student details via ForeignKey relationships #}
+                                            <td>{{ hold.book.name }}</td>
+                                            <td>{{ hold.student.user.first_name }} {{ hold.student.user.last_name }}</td>
+                                            <td>{{ hold.student.adm_no }}</td>
+                                            <td>{{ hold.place_date }}</td>
+                                            <td>
+                                                {# Display status with badge #}
+                                                {% if hold.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                     <span class="badge bg-secondary">Inactive</span> {# Or "Processed", "Cancelled" #}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {# Optional: Add admin actions here (e.g., delete hold) #}
+                                                {% comment %}
+                                                <a href="{% url 'admin_delete_hold' hold.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this hold?')">Delete</a>
+                                                {% endcomment %}
+                                                 {# Note: Deleting holds might affect hold queue logic if not careful #}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7">No holds have been placed yet.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div> {# End table-responsive #}
+                </div> {# End card #}
+            </div> {# End col #}
+        </div> {# End row #}
+    </div> {# End container #}
+
+</main>
+
+{% endblock main_content %}
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+{% endblock js%}

@@ -44,7 +44,10 @@ ROOT_URLCONF = 'LibraryManagementSystem.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ["library/templates"],
+        # Corrected DIRS to potentially include project-level templates if needed,
+        # but keeping your existing app-specific template directory is also fine.
+        # DIRS: [BASE_DIR / 'templates'], # Example for project-level templates
+        'DIRS': ["library/templates"], # Your existing app-specific templates
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -95,9 +98,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC' # Using UTC as a standard
 
 USE_I18N = True
 
@@ -117,4 +118,27 @@ STATICFILES_DIRS = [
 ]
 
 STATIC_ROOT=os.path.join(BASE_DIR,"static")
-# Application definition
+
+# Email Settings for Password Reset (using console backend for testing)
+# This will print emails to the console instead of sending them
+
+EMAIL_BACKEND="django.core.mail.backends.filebased.EmailBackend"
+EMAIL_FILE_PATH=os.path.join(BASE_DIR,"sent_mails")
+
+# You might still want to define a default from email, even with the console backend
+# This will be used in the "From" header of the printed email
+DEFAULT_FROM_EMAIL = 'noreply@yourlibraryapp.com' # Replace with a suitable no-reply address
+
+# In a real production environment, you would configure a proper SMTP backend like this:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'your_smtp_server.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your_email@example.com'
+# EMAIL_HOST_PASSWORD = 'your_email_password'
+# DEFAULT_FROM_EMAIL = 'your_email@example.com'
+
+# Default primary key type
+# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField' # Added or confirmed this setting

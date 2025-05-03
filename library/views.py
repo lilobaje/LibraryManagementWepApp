@@ -130,10 +130,6 @@ def edit_book_save(request):
              genres.append(genre)
         book.genres.set(genres)
 
-        # Decide if quantity should be editable here or only through issue/return
-        # book.quantity = request.POST.get('quantity', book.quantity)
-        # Recalculate available_quantity if quantity is edited directly (complex)
-        # It's often simpler to manage quantity only via issue/return
 
         try:
             book.save()
@@ -167,6 +163,7 @@ def view_books(request):
     return render(request, "admin_temp/books.html", {'books': books})
 
 # Added book_detail view
+@login_required(login_url='/student_login/')
 def book_detail(request, book_id):
     """ Displays the details of a specific book. """
     book = get_object_or_404(Book, id=book_id)
@@ -199,7 +196,7 @@ def view_students(request):
     students = Student.objects.all()
     return render(request, "admin_temp/students.html", {'students': students})
 
-
+@login_required(login_url='/admin_login')
 def Search_student(request):
     q = request.GET.get('q') if request.GET.get('q') is not None else ''
     # Searching by phone, maybe add name, adm_no, etc.
@@ -213,7 +210,25 @@ def Search_student(request):
     context = {'students': students}
     return render(request, "admin_temp/students.html", context)
 
+
+@login_required(login_url='/student_login/')
 def Search_book(request):
+    q = request.GET.get('q') if request.GET.get('q') is not None else ''
+    # Searching by isbn, maybe add name, author, genre, etc.
+    books = Book.objects.filter(
+        Q(isbn__icontains=q) |
+        Q(name__icontains=q) |
+        Q(author__icontains=q) |
+        Q(genres__name__icontains=q) # Searching by genre name (requires distinct)
+    ).distinct() # Use distinct to avoid duplicate books if they have multiple matching genres
+    context = {'books': books}
+   
+   
+    return render(request, "student/book_list.html", context)
+
+
+@login_required(login_url='/admin_login')
+def Search_book_admin(request):
     q = request.GET.get('q') if request.GET.get('q') is not None else ''
     # Searching by isbn, maybe add name, author, genre, etc.
     books = Book.objects.filter(
@@ -226,6 +241,8 @@ def Search_book(request):
     return render(request, "admin_temp/books.html", context)
 
 
+
+@login_required(login_url='/admin_login')
 def returned(request, id):
     """ Handles the return of an issued book. """
     issued_book = get_object_or_404(IssuedBook, id=id)
@@ -257,7 +274,7 @@ def returned(request, id):
     messages.success(request, f"Book '{book.name}' marked as returned.")
     return HttpResponseRedirect(reverse("view_issued_book"))
 
-
+@login_required(login_url='/admin_login')
 def not_returned(request, id):
     """ Reverts the status of an issued book to Active (if it was marked returned by mistake). """
     # This might need more careful handling to decrement available_quantity if it was incremented
@@ -297,23 +314,7 @@ def issue_book(request):
                     books = Book.objects.filter(available_quantity__gt=0) # Need this for book dropdown if not using ModelForm
                     return render(request, "admin_temp/issueBook.html", {'form': form, 'students': students, 'books': books})
 
-                # Optional: Check if the student has too many books issued
-                # issued_count = IssuedBook.objects.filter(student=selected_student, book_status='Active').count()
-                # if issued_count >= MAX_BOOKS_PER_STUDENT: # Define MAX_BOOKS_PER_STUDENT in settings
-                #     messages.error(request, f"{selected_student.user.username} has reached the maximum number of issued books.")
-                #     students = Student.objects.all()
-                #     books = Book.objects.filter(available_quantity__gt=0)
-                #     return render(request, "admin_temp/issueBook.html", {'form': form, 'students': students, 'books': books})
-
-                # Optional: Check if the student has outstanding fines preventing issue
-                # if selected_student.total_fines > 0:
-                #      messages.error(request, f"{selected_student.user.username} has outstanding fines.")
-                #      students = Student.objects.all()
-                #      books = Book.objects.filter(available_quantity__gt=0)
-                #      return render(request, "admin_temp/issueBook.html", {'form': form, 'students': students, 'books': books})
-
-                # --- Check for active holds and potentially remove the oldest one for this student/book ---
-                # If a student is being issued a book they had on hold, you might remove their hold here
+              
                 active_hold = Hold.objects.filter(book=selected_book, student=selected_student, is_active=True).order_by('place_date').first()
                 if active_hold:
                     # If the student had an active hold, mark it as completed or inactive
@@ -358,6 +359,7 @@ def issue_book(request):
     students = Student.objects.all()
     books = Book.objects.filter(available_quantity__gt=0) # Only show books with available copies
     return render(request, "admin_temp/issueBook.html", {'form': form, 'students': students, 'books': books})
+
 @login_required(login_url='/student_login')
 def cancel_hold(request, hold_id):
     """ Allows a student to cancel their active hold. """
@@ -395,6 +397,27 @@ def view_issued_book(request):
     # The complex loop to build 'details' is removed, you can access related objects directly in the template
     return render(request, "admin_temp/issued_books.html", {'issuedBooks': issued_books})
 
+@login_required(login_url='/admin_login') # Requires admin login
+def admin_view_holds(request):
+    """ Displays a list of all holds for administrative viewing. """
+    user = request.user
+
+    # --- Check to ensure the logged-in user is a superuser (admin) ---
+    if not user.is_superuser:
+        messages.error(request, "You do not have administrative privileges.")
+        # Redirect to admin dashboard or admin login
+        return redirect('dash') # Or redirect('admin_login')
+    # --- End of check ---
+
+    # Fetch all Hold objects, ordered by place date (or status, depending on preference)
+    all_holds = Hold.objects.all().select_related('book', 'student__user').order_by('-is_active', 'place_date')
+    # .select_related() improves performance by fetching related objects in one query
+    # .order_by('-is_active', 'place_date') orders active holds first, then by place date
+
+    context = {
+        'all_holds': all_holds
+    }
+    return render(request, 'admin_temp/view_holds.html', context) # We will create this template next
 
 @login_required(login_url='/student_login')
 def student_issued_books(request):
@@ -434,7 +457,7 @@ def my_holds(request):
     return render(request, 'student/my_holds.html', context) # We will create/update this template
 
 # Added the place_hold view
-@login_required
+@login_required(login_url='/student_login')
 def place_hold(request, book_id):
     book = get_object_or_404(Book, id=book_id)
     user = request.user
@@ -524,7 +547,7 @@ def edit_profile(request):
     # If GET request, display the current profile data in the form
     return render(request, "student/edit.html", {'student': student})
 
-
+@login_required(login_url='/admin_login')
 def delete_book(request, myid):
     """ Deletes a book. Consider implications for issued books and holds. """
     book = get_object_or_404(Book, id=myid)
@@ -544,7 +567,7 @@ def delete_book(request, myid):
 
     return redirect("view_books")
 
-
+@login_required(login_url='/admin_login')
 def delete_student(request, myid):
     """ Deletes a student. Consider implications for issued books and fines. """
     student = get_object_or_404(Student, id=myid)
@@ -566,7 +589,7 @@ def delete_student(request, myid):
 
     return redirect("view_students")
 
-
+@login_required(login_url='/admin_login')
 def delete_issued(request, id):
     """ Deletes an issued book entry. Should increment available quantity. """
     issued_book = get_object_or_404(IssuedBook, id=id)
