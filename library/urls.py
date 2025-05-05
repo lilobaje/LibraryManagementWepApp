@@ -12,6 +12,8 @@ urlpatterns = [
     # URLs for Book Management
     path("add_book/", views.add_book, name="add_book"),
     path("view_books/", views.view_books, name="view_books"),
+    path("overdue_books_report/", views.overdue_books_report, name="overdue_books_report"),
+    path("available_books_report/", views.available_books_report, name="available_books_report"),
     path('admin_view_holds/', views.admin_view_holds, name='admin_view_holds'), # Added URL for admin to view all holds
     # Added URL for book_detail
     path("book/<int:book_id>/", views.book_detail, name="book_detail"),

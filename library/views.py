@@ -8,7 +8,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
+from django.core.mail import send_mail
 from datetime import date
+
+from LibraryManagementSystem import settings
 from . import forms, models # Assuming forms.py is in the same app directory
 from .forms import StudentForm
 # Import necessary models
@@ -141,20 +144,6 @@ def edit_book_save(request):
             return redirect('edit_book', book_id=book.id)
 
 
-def dash(request):
-    user_count = User.objects.all().count()
-    student_count = Student.objects.all().count()
-    books_count = Book.objects.all().count()
-    issued_books_count = IssuedBook.objects.filter(book_status='Active').count() # Count active issues
-    holds_count = Hold.objects.filter(is_active=True).count() # Count active holds
-
-    return render(request, "admin_temp/dash.html", {
-        "user_count": user_count,
-        'books_count': books_count,
-        'issued_books_count': issued_books_count,
-        "student_count": student_count,
-        "holds_count": holds_count,
-    })
 
 
 @login_required(login_url='/admin_login')
@@ -243,36 +232,73 @@ def Search_book_admin(request):
 
 
 @login_required(login_url='/admin_login')
-def returned(request, id):
-    """ Handles the return of an issued book. """
-    issued_book = get_object_or_404(IssuedBook, id=id)
+def returned(request, pk):
+    """ Marks an issued book as returned and notifies the next student on hold if any. """
+    issued_book = get_object_or_404(IssuedBook, id=pk)
     book = issued_book.book # Get the related Book object
 
-    # Update the status of the issued book
+    # --- Update IssuedBook status to 'Returned' ---
     issued_book.book_status = "Returned"
-    # Set the returned date (add a returned_date field to IssuedBook model)
-    # issued_book.returned_date = date.today() # Requires 'from datetime import date'
+    # You might want to record the actual return date here if you added a field for it
+    # issued_book.return_date = date.today()
     issued_book.save()
+    # --- End Update IssuedBook status ---
 
-    # Increment the available quantity of the book
-    book.available_quantity += 1
+    # --- Increase the available quantity of the book ---
+    book.available_quantity = book.available_quantity + 1
     book.save()
+    messages.success(request, f"Book '{book.name}' marked as Returned. Available quantity updated.")
+    # --- End Increase available quantity ---
 
-    # --- Hold System Integration (Check for holds and notify the next person) ---
-    # Find the oldest active hold for this book
+
+    # --- Check for the next active hold and notify the student ---
+    # Find the oldest active hold for this specific book
     next_hold = Hold.objects.filter(book=book, is_active=True).order_by('place_date').first()
 
     if next_hold:
-        # You would implement a notification system here (e.g., sending an email)
-        # For now, let's just mark the hold as inactive (or delete it) and maybe add a message
-        # Instead of marking inactive here, you might transition the hold status
-        # or delete it upon successful notification and subsequent issue.
-        messages.info(request, f"Book '{book.name}' returned. {next_hold.student.user.username} was next in the hold queue.")
-        # Consider creating a new model/system for managing hold notifications or using a task queue
+        student_on_hold = next_hold.student
+        student_email = student_on_hold.user.email
+        book_title = book.name
 
+        if student_email: # Only send notification if the student has an email
+            subject = f"Book Available: '{book_title}' is Ready for Pickup"
+            message = (
+                f"Hello {student_on_hold.user.first_name},\n\n"
+                f"Good news! The book '{book_title}' that you placed on hold is now available for pickup.\n\n"
+                "Please visit the library within [Specify Pickup Period, e.g., 3 days] to borrow the book.\n\n" # Add info about pickup period
+                "If you do not pick up the book within the specified period, your hold may be cancelled.\n\n"
+                "Thank you,\n"
+                "Your Library Team" # Replace with your library name
+            )
+            from_email = settings.DEFAULT_FROM_EMAIL # Use the default sender email from settings
+            recipient_list = [student_email]
 
-    messages.success(request, f"Book '{book.name}' marked as returned.")
-    return HttpResponseRedirect(reverse("view_issued_book"))
+            try:
+                # --- Send the email notification ---
+                send_mail(subject, message, from_email, recipient_list)
+                messages.info(request, f"Notification email sent to {student_email} (student on hold).")
+
+                # --- Mark the hold as inactive after notification ---
+                # You might want to change this logic later to give them a pickup window
+                # But for a basic implementation, marking inactive after notification is fine
+                next_hold.is_active = False
+                next_hold.save()
+                messages.info(request, f"Hold for {student_on_hold.user.username} on '{book_title}' has been marked inactive.")
+
+            except Exception as e:
+                 messages.error(request, f"Failed to send notification email to {student_email}: {e}")
+                 # Consider adding logging here to track failed emails
+
+        else:
+            messages.warning(request, f"Book available for {student_on_hold.user.username} on hold, but no email address available to send notification.")
+            # You might still want to mark the hold inactive here if you don't have other notification methods
+
+    else:
+        messages.info(request, f"No active holds found for '{book.name}'.")
+    # --- End Check for hold and notify ---
+
+    # Redirect back to the view issued books page (or wherever appropriate)
+    return redirect('view_issued_book') # Or redirect to the book detail page, etc.
 
 @login_required(login_url='/admin_login')
 def not_returned(request, id):
@@ -392,10 +418,125 @@ def cancel_hold(request, hold_id):
 
 @login_required(login_url='/admin_login')
 def view_issued_book(request):
-    """ View for admins/librarians to see all issued books. """
-    issued_books = IssuedBook.objects.all().select_related('student__user', 'book') # Optimize queries
-    # The complex loop to build 'details' is removed, you can access related objects directly in the template
-    return render(request, "admin_temp/issued_books.html", {'issuedBooks': issued_books})
+    """ Displays a list of all issued books for admin. """
+    user = request.user
+
+    if not user.is_superuser:
+        messages.error(request, "You do not have administrative privileges.")
+        return redirect('dash')
+
+    # Fetch all IssuedBook objects, optimizing queries for related data
+    issued_books = IssuedBook.objects.all().select_related('student__user', 'book').order_by('-issued_date') # Order by most recently issued
+
+    today = date.today()
+    # Calculate days overdue for each issued book in Python
+    # Add a boolean flag for 'is_overdue' and the 'days_overdue' count
+    for issued_book in issued_books:
+        if issued_book.book_status == 'Active' and issued_book.expiry_date < today:
+            issued_book.is_overdue = True
+            delta = today - issued_book.expiry_date
+            issued_book.days_overdue = delta.days
+        else:
+            issued_book.is_overdue = False
+            issued_book.days_overdue = 0 # Or None, but 0 is simpler for display
+
+    context = {'issuedBooks': issued_books}
+    return render(request, "admin_temp/issued_books.html", context)
+
+@login_required(login_url='/admin_login') # Requires admin login
+def available_books_report(request):
+    """ Displays a report of all books that are currently available. """
+    user = request.user
+
+    # --- Check to ensure the logged-in user is a superuser (admin) ---
+    if not user.is_superuser:
+        messages.error(request, "You do not have administrative privileges.")
+        return redirect('dash') # Or redirect('admin_login')
+    # --- End of check ---
+
+    # Find Book objects where available_quantity is greater than 0
+    available_books = Book.objects.filter(
+        available_quantity__gt=0
+    ).order_by('name') # Order by book title
+
+    context = {
+        'available_books': available_books,
+        # 'today': date.today(), # Include if you want to display the report date
+    }
+    return render(request, 'admin_temp/available_books_report.html', context) # We will create this template next
+
+
+# In your views.py
+
+# ... (your existing imports) ...
+from datetime import date # Make sure date is imported
+
+
+@login_required(login_url='/admin_login') # Requires admin login
+def dash(request):
+    user_count = User.objects.all().count()
+    student_count = Student.objects.all().count()
+    books_count = Book.objects.all().count()
+    issued_books_count = IssuedBook.objects.filter(book_status='Active').count() # Count active issues
+    holds_count = Hold.objects.filter(is_active=True).count() # Count active holds
+
+    # --- Calculate Overdue Count ---
+    today = date.today()
+    overdue_count = IssuedBook.objects.filter(
+        book_status='Active',
+        expiry_date__lt=today
+    ).count()
+    # --- End Calculate Overdue Count ---
+
+    return render(request, "admin_temp/dash.html", {
+        "user_count": user_count,
+        'books_count': books_count,
+        'issued_books_count': issued_books_count,
+        "student_count": student_count,
+        "holds_count": holds_count,
+        'overdue_count': overdue_count, # <-- Pass the new count to the template
+    })
+
+# ... (rest of your views) ...
+
+
+@login_required(login_url='/admin_login') # Requires admin login
+def overdue_books_report(request):
+    """ Displays a report of all currently overdue issued books. """
+    user = request.user
+
+    # --- Check to ensure the logged-in user is a superuser (admin) ---
+    if not user.is_superuser:
+        messages.error(request, "You do not have administrative privileges.")
+        return redirect('dash') # Or redirect('admin_login')
+    # --- End of check ---
+
+    today = date.today()
+
+    # Find IssuedBook objects that are Active and whose expiry date is before today
+    # Annotate the queryset with the number of days overdue
+    overdue_issues = IssuedBook.objects.filter(
+        book_status='Active',
+        expiry_date__lt=today
+    ).annotate(
+        # Calculate days overdue: (Today - Expiry Date) in days
+        # Use F() expression for database-level calculation
+        # Note: This requires Django 2.1+ and database support for date subtraction
+        # An alternative is to calculate it in Python after fetching, but that's less efficient for large lists
+        # Let's calculate in Python for compatibility
+        # days_overdue=Now() - F('expiry_date') # Django 2.1+ example annotation
+    ).select_related('student__user', 'book').order_by('expiry_date')
+
+    # Calculate days overdue in Python for compatibility
+    for issue in overdue_issues:
+        delta = today - issue.expiry_date
+        issue.days_overdue = delta.days # Add a new attribute to the issue object
+
+    context = {
+        'overdue_issues': overdue_issues,
+        'today': today,
+    }
+    return render(request, 'admin_temp/overdue_books_report.html', context)
 
 @login_required(login_url='/admin_login') # Requires admin login
 def admin_view_holds(request):

@@ -1,60 +1,121 @@
 {% load static %}
 <nav id="sidebar" class="sidebar js-sidebar">
     <div class="sidebar-content js-simplebar">
-        <a class="sidebar-brand" href="index.html">
-  <span class="align-middle">Admin</span>
-</a>
+        {# Update the brand link - assume 'dash' is the URL name for the admin dashboard #}
+        <a class="sidebar-brand" href="{% url 'dash' %}">
+            <span class="align-middle">Admin Panel</span> {# More descriptive brand text #}
+        </a>
 
         <ul class="sidebar-nav">
+
+            {# --- Dashboard Link --- #}
             <li class="sidebar-header">
-                PAGE
+                Main
             </li>
+            <li class="sidebar-item {% if request.resolver_match.url_name == 'dash' %}active{% endif %}"> {# Highlight active link #}
+                <a class="sidebar-link" href="{% url 'dash' %}">
+                    <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Dashboard</span>
+                </a>
+            </li>
+            {# --- End Dashboard Link --- #}
 
-            <li class="sidebar-item active">
-                <a class="sidebar-link" href="/dash">
-      <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Dashboard</span>
-    </a>
+            {# --- Books Management Section --- #}
+            <li class="sidebar-header">
+                Books Management
             </li>
-           
-            <li class="sidebar-item">
-                <a class="sidebar-link" href="/view_books/">
-      <i class="align-middle" data-feather="book"></i> <span class="align-middle">Books</span>
-    </a>
+            <li class="sidebar-item {% if request.resolver_match.url_name == 'view_books' %}active{% endif %}"> {# Highlight active link #}
+                <a class="sidebar-link" href="{% url 'view_books' %}"> {# Use URL name #}
+                    <i class="align-middle" data-feather="book"></i> <span class="align-middle">View All Books</span>
+                </a>
             </li>
-     
-            <li class="sidebar-item">
-                <a class="sidebar-link" href="/add_book">
-      <i class="align-middle" data-feather="book"></i> <span class="align-middle">Add Book</span>
-    </a>
+             <li class="sidebar-item {% if request.resolver_match.url_name == 'add_book' %}active{% endif %}"> {# Highlight active link #}
+                <a class="sidebar-link" href="{% url 'add_book' %}"> {# Use URL name #}
+                    <i class="align-middle" data-feather="plus-square"></i> <span class="align-middle">Add New Book</span> {# Changed icon #}
+                </a>
             </li>
-            <li class="sidebar-item">
-              <a class="sidebar-link" href=" {% url 'admin_view_holds' %}">
-    <i class="align-middle" data-feather="book"></i> <span class="align-middle">Holds
-  </a>
-          </li>
+            {# Add other book-related links here if needed #}
+            {# --- End Books Management Section --- #}
 
-            <li class="sidebar-item">
-                <a class="sidebar-link" href="/issue_book/">
-      <i class="align-middle" data-feather="log-in"></i> <span class="align-middle">Issue Book</span>
-    </a>
-            </li>
 
-            <li class="sidebar-item">
-                <a class="sidebar-link" href="/view_students/">
-      <i class="align-middle" data-feather="user-plus"></i> <span class="align-middle">Students</span>
-    </a>
+            {# --- Circulation & Issued Books Section --- #}
+            <li class="sidebar-header">
+                Circulation
             </li>
-
-            <li class="sidebar-item">
-                <a class="sidebar-link" href="/view_issued_book/">
-      <i class="align-middle" data-feather="book-open"></i> <span class="align-middle">Issued Books</span>
-    </a>
+             <li class="sidebar-item {% if request.resolver_match.url_name == 'issue_book' %}active{% endif %}"> {# Highlight active link #}
+                <a class="sidebar-link" href="{% url 'issue_book' %}"> {# Use URL name #}
+                    <i class="align-middle" data-feather="log-in"></i> <span class="align-middle">Issue Book</span>
+                </a>
             </li>
+            <li class="sidebar-item {% if request.resolver_match.url_name == 'view_issued_book' %}active{% endif %}"> {# Highlight active link #}
+                <a class="sidebar-link" href="{% url 'view_issued_book' %}"> {# Use URL name #}
+                    <i class="align-middle" data-feather="book-open"></i> <span class="align-middle">View Issued Books</span>
+                </a>
+            </li>
+             {# Link to Overdue Books Report - Placed here as it's a report on issued books #}
+            <li class="sidebar-item {% if request.resolver_match.url_name == 'overdue_books_report' %}active{% endif %}"> {# Highlight active link #}
+                 <a class="sidebar-link" href="{% url 'overdue_books_report' %}"> {# Use URL name #}
+                     <i class="align-middle" data-feather="alert-circle"></i> <span class="align-middle">Overdue Books</span> {# Changed icon to match dashboard #}
+                 </a>
+             </li>
+            {# --- End Circulation & Issued Books Section --- #}
 
-          
+
+            {# --- Students Management Section --- #}
+             <li class="sidebar-header">
+                Students
+            </li>
+             <li class="sidebar-item {% if request.resolver_match.url_name == 'view_students' %}active{% endif %}"> {# Highlight active link #}
+                <a class="sidebar-link" href="{% url 'view_students' %}"> {# Use URL name #}
+                    <i class="align-middle" data-feather="users"></i> <span class="align-middle">View All Students</span> {# Changed icon #}
+                </a>
+            </li>
+            {# Add other student-related links here if needed #}
+            {# --- End Students Management Section --- #}
+
+
+             {# --- Holds & Reservations Section --- #}
+             <li class="sidebar-header">
+                 Holds
+             </li>
+              <li class="sidebar-item {% if request.resolver_match.url_name == 'admin_view_holds' %}active{% endif %}"> {# Highlight active link #}
+                 <a class="sidebar-link" href="{% url 'admin_view_holds' %}"> {# Use URL name #}
+                     <i class="align-middle" data-feather="bookmark"></i> <span class="align-middle">View All Holds</span> {# Changed icon #}
+                 </a>
+             </li>
+             {# Add other hold-related links here if needed #}
+             {# --- End Holds & Reservations Section --- #}
+
+             {# --- Reports Section --- #}
+             <li class="sidebar-header">
+                 Reports
+             </li>
+             {# Link to Available Books Report #}
+              <li class="sidebar-item {% if request.resolver_match.url_name == 'available_books_report' %}active{% endif %}"> {# Highlight active link #}
+                 <a class="sidebar-link" href="{% url 'available_books_report' %}"> {# Use URL name #}
+                     <i class="align-middle" data-feather="check-square"></i> <span class="align-middle">Available Books</span> {# Changed icon #}
+                 </a>
+             </li>
+              {# Add other reports here later (e.g., Popular Books, Fine Report) #}
+             {# --- End Reports Section --- #}
+
+
+            {# --- Account/System Links --- #}
+            <li class="sidebar-header">
+                Account
+            </li>
+            {# Assuming you have a logout URL named 'admin_logout' #}
+            <li class="sidebar-item {% if request.resolver_match.url_name == 'admin_logout' %}active{% endif %}"> {# Highlight active link #}
+                <a class="sidebar-link" href="/logout"> {# Use URL name #}
+                    <i class="align-middle" data-feather="log-out"></i> <span class="align-middle">Logout</span> {# Changed icon #}
+                </a>
+            </li>
+             {# Add change password or other account links here #}
+            {# --- End Account/System Links --- #}
+
 
         </ul>
 
-        
+        {# You can add sidebar footers or other content here if your theme supports it #}
+
     </div>
 </nav>

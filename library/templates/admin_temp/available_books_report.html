@@ -1,0 +1,79 @@
+{# your_app_name/templates/admin_temp/available_books_report.html #}
+{% extends 'admin_temp/base.html' %} {# Make sure this matches your admin base template #}
+{% load static %} {# Load static if needed #}
+
+{% block title %}Available Books Report{% endblock %} {# Set the page title #}
+
+{% block main_content %}
+<main class="content">
+
+    <div class="container mt-4">
+        <h2>Available Books Report</h2>
+        {# <p>Report Date: {{ today|date:"F j, Y" }}</p> #} {# Uncomment if you passed today's date #}
+
+        {# --- Display Messages --- #}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# --- End Messages --- #}
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card flex-fill">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Books with Available Copies</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover my-0">
+                            <thead>
+                                <tr>
+                                    <th>Sr.No</th>
+                                    <th>Book Title</th>
+                                    <th>Book Author</th>
+                                    <th>ISBN</th>
+                                    <th>Available Copies</th>
+                                    <th>Total Copies</th>
+                                    {# You could add links to view book details here #}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if available_books %}
+                                    {% for book in available_books %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}.</td>
+                                            <td>{{ book.name }}</td>
+                                            <td>{{ book.author }}</td>
+                                            <td>{{ book.isbn }}</td>
+                                            <td>{{ book.available_quantity }}</td>
+                                            <td>{{ book.quantity }}</td>
+                                            {# Optional: Link to book detail page #}
+                                            {% comment %}
+                                            <td>
+                                                <a href="{% url 'book_detail' book.id %}" class="btn btn-info btn-sm">Details</a>
+                                            </td>
+                                            {% endcomment %}
+                                        </tr>
+                                    {% endfor %}
+                                {% else %} {# Message if no available books #}
+                                    <tr>
+                                        <td colspan="6">No books are currently available.</td> {# Adjusted colspan #}
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div> {# End table-responsive #}
+                </div> {# End card #}
+            </div> {# End col #}
+        </div> {# End row #}
+    </div> {# End container #}
+
+</main>
+
+{% endblock main_content %}
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+{% endblock js%}

@@ -2,6 +2,9 @@
 {% extends 'admin_temp/base.html' %}
 {% load static %} {# Load static if you need it #}
 
+{% block title %}Admin Issued Books{% endblock %} {# Set the page title #}
+
+
 {% block main_content %}
 <main class="content">
 
@@ -30,60 +33,93 @@
                             <thead>
                                 <tr>
                                     <th>Sr.No</th>
-                                    <th>Student Name</th> {# Changed from Name #}
-                                    <th>Student ID</th> {# Changed from ID #}
+                                    <th>Student Name</th>
+                                    <th>Student ID</th>
                                     <th>Book Name</th>
-                                    <th>Book ISBN</th> {# Changed from ISBN, access via book object #}
+                                    <th>Book Author</th> {# Added Book Author header #}
+                                    <th>Book ISBN</th>
                                     <th>Issued Date</th>
-                                    <th>Expiry Date</th> {# Changed from Expiry-Date #}
+                                    <th>Expiry Date</th>
+                                    <th>Days Overdue</th> {# Added Days Overdue header #}
                                     <th>Status</th>
-                                    <th colspan="2">Actions</th> {# Combined Action and Delete headers #}
+                                    <th colspan="2">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {# --- Updated: Loop through issuedBooks instead of details --- #}
-                                {% for issued_book in issuedBooks %}
-                                    <tr>
-                                        <td>{{ forloop.counter }}.</td>
-                                        {# Access student details via the ForeignKey #}
-                                        <td>{{ issued_book.student.user.first_name }} {{ issued_book.student.user.last_name }}</td> {# Display full name #}
-                                        <td>{{ issued_book.student.adm_no }}</td> {# Use adm_no or user_id as appropriate #}
-                                        {# Access book details via the ForeignKey #}
-                                        <td>{{ issued_book.book.name }}</td>
-                                        <td>{{ issued_book.book.isbn }}</td>
-                                        {# Access issued book details directly #}
-                                        <td>{{ issued_book.issued_date }}</td>
-                                        <td>{{ issued_book.expiry_date }}</td>
-                                        <td>{{ issued_book.book_status }}</td>
+                                {% if issuedBooks %}
+                                    {% for issued_book in issuedBooks %}
+                                        {# --- Conditional row styling for overdue books --- #}
+                                        <tr {% if issued_book.is_overdue %} class="table-danger" {% endif %}> {# Add class for overdue rows #}
+                                            <td>{{ forloop.counter }}.</td>
+                                            {# Access student details via the ForeignKey #}
+                                            <td>{{ issued_book.student.user.first_name }} {{ issued_book.student.user.last_name }}</td>
+                                            <td>{{ issued_book.student.adm_no }}</td>
+                                            {# Access book details via the ForeignKey #}
+                                            <td>{{ issued_book.book.name }}</td>
+                                            <td>{{ issued_book.book.author }}</td> {# Display Book Author #}
+                                            <td>{{ issued_book.book.isbn }}</td>
+                                            {# Access issued book details directly #}
+                                            <td>{{ issued_book.issued_date }}</td>
+                                            <td>{{ issued_book.expiry_date }}</td>
+                                            {# --- Display Days Overdue --- #}
+                                            <td>
+                                                {% if issued_book.is_overdue %}
+                                                    {{ issued_book.days_overdue }} days
+                                                {% else %}
+                                                    - {# Display dash if not overdue #}
+                                                {% endif %}
+                                            </td>
+                                            {# --- End Display Days Overdue --- #}
+                                            {# --- Display Status with Badges --- #}
+                                            <td>
+                                                {% if issued_book.book_status == "Active" %}
+                                                    {% if issued_book.is_overdue %}
+                                                         <span class="badge bg-danger">Overdue</span> {# Use danger badge for overdue #}
+                                                    {% else %}
+                                                         <span class="badge bg-success">Active</span> {# Use success badge for active and not overdue #}
+                                                    {% endif %}
+                                                {% elif issued_book.book_status == "Returned" %}
+                                                     <span class="badge bg-secondary">Returned</span> {# Use secondary badge for returned #}
+                                                {% else %}
+                                                     {{ issued_book.book_status }} {# Display raw status if not Active or Returned #}
+                                                {% endif %}
+                                            </td>
+                                            {# --- End Display Status with Badges --- #}
 
-                                        {# Action buttons (Returned/In Possession) #}
-                                        <td>
-                                            <div class="dropdown">
-                                                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownStatus{{ issued_book.id }}" data-bs-toggle="dropdown" aria-expanded="false">
-                                                    Change Status
-                                                </button>
-                                                <ul class="dropdown-menu" aria-labelledby="dropdownStatus{{ issued_book.id }}">
-                                                    {# Use the correct URL names and pass the issued_book.id #}
-                                                    <li><a class="dropdown-item" href="{% url 'returned' issued_book.id %}">Returned</a></li>
-                                                    <li><a class="dropdown-item" href="{% url 'not_returned' issued_book.id %}">In Possession</a></li>
-                                                </ul>
-                                            </div>
-                                        </td>
 
-                                        {# Delete button #}
-                                        <td>
-                                            {# Use the correct URL name and pass the issued_book.id #}
-                                            <a href="{% url 'delete_issued' issued_book.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this issued book details?')">
-                                                Delete
-                                            </a>
-                                        </td>
-                                    </tr>
-                                {% empty %} {# Message if issuedBooks is empty #}
-                                    <tr>
-                                        <td colspan="10">No books have been issued yet.</td>
-                                    </tr>
-                                {% endfor %}
-                                {# --- End Updated --- #}
+                                            {# Action buttons (Returned/In Possession) #}
+                                            <td>
+                                                {# Only show status change if the book is still Active #}
+                                                {% if issued_book.book_status == 'Active' %}
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownStatus{{ issued_book.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                                            Change Status
+                                                        </button>
+                                                        <ul class="dropdown-menu" aria-labelledby="dropdownStatus{{ issued_book.id }}">
+                                                            {# Use the correct URL names and pass the issued_book.id #}
+                                                            <li><a class="dropdown-item" href="{% url 'returned' issued_book.id %}">Returned</a></li>
+                                                            <li><a class="dropdown-item" href="{% url 'not_returned' issued_book.id %}">In Possession</a></li> {# This link might be less useful if status is already active #}
+                                                        </ul>
+                                                    </div>
+                                                {% else %}
+                                                    - {# Display dash if status is not Active (e.g., Returned) #}
+                                                {% endif %}
+                                            </td>
+
+                                            {# Delete button #}
+                                            <td>
+                                                {# Use the correct URL name and pass the issued_book.id #}
+                                                <a href="{% url 'delete_issued' issued_book.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this issued book details?')">
+                                                    Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="11">No books have been issued yet.</td> {# Adjusted colspan #}
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
                             </tbody>
                         </table>
                     </div> {# End table-responsive #}

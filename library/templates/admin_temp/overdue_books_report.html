@@ -1,0 +1,83 @@
+{# your_app_name/templates/admin_temp/overdue_books_report.html #}
+{% extends 'admin_temp/base.html' %} {# Make sure this matches your admin base template #}
+{% load static %} {# Load static if needed #}
+
+{% block title %}Overdue Books Report{% endblock %} {# Set the page title #}
+
+{% block main_content %}
+<main class="content">
+
+    <div class="container mt-4">
+        <h2>Overdue Books Report</h2>
+        <p>Report Date: {{ today|date:"F j, Y" }}</p> {# Display the report date #}
+
+        {# --- Display Messages --- #}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# --- End Messages --- #}
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card flex-fill">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Books Currently Overdue</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover my-0">
+                            <thead>
+                                <tr>
+                                    <th>Sr.No</th>
+                                    <th>Book Title</th>
+                                    <th>Book Author</th>
+                                    <th>Student Name</th>
+                                    <th>Student ID</th>
+                                    <th>Issued Date</th>
+                                    <th>Expiry Date</th>
+                                    <th>Days Overdue</th> {# We'll calculate this #}
+                                    {# You could add actions here like "Mark Returned" or "Send Reminder (if implemented)" #}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if overdue_issues %}
+                                    {% for issue in overdue_issues %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}.</td>
+                                            {# Access book and student details via ForeignKey relationships #}
+                                            <td>{{ issue.book.name }}</td>
+                                            <td>{{ issue.book.author }}</td>
+                                            <td>{{ issue.student.user.first_name }} {{ issue.student.user.last_name }}</td>
+                                            <td>{{ issue.student.adm_no }}</td>
+                                            <td>{{ issue.issued_date }}</td>
+                                            <td>{{ issue.expiry_date }}</td>
+
+                                            <td>{{ issue.days_overdue }} days</td>
+                                            {# Optional action buttons #}
+                                        </tr>
+                                    {% endfor %}
+                                {% else %} {# Message if no overdue books #}
+                                    <tr>
+                                        <td colspan="8">No books are currently overdue.</td> {# Adjusted colspan #}
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div> {# End table-responsive #}
+                </div> {# End card #}
+            </div> {# End col #}
+        </div> {# End row #}
+    </div> {# End container #}
+
+</main>
+
+{% endblock main_content %}
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+    {# Ensure your base template includes necessary filters or load them if needed #}
+    {# To use `sub` and `div` filters, you might need to load them, e.g., {% load mathfilters %} #}
+    {# If you don't have mathfilters, you can do the calculation in the view and pass it #}
+{% endblock js%}

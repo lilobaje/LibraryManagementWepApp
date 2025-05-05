@@ -39,9 +39,10 @@
                         </div>
                         {# --- Updated: Use the correct variable for book count --- #}
                         <h1 class="mt-1 mb-3">{{ books_count }}</h1>
-                        {# --- Add link to View Books page --- #}
-                         <a href="{% url 'view_books' %}" class="mb-0 text-muted">View All Books &rarr;</a>
-                        {# --- End Updated --- #}
+                        {# --- Add links related to books --- #}
+                        <a href="{% url 'view_books' %}" class="mb-0 text-muted">View All Books &rarr;</a><br> {# Existing link #}
+                         <a href="{% url 'available_books_report' %}" class="mb-0 text-success">View Available Books &rarr;</a> {# Existing link #}
+                        {# --- End Updated Links --- #}
                     </div>
                 </div>
             </div>
@@ -65,10 +66,37 @@
                         <h1 class="mt-1 mb-3">{{ issued_books_count }}</h1>
                         {# --- Add link to View Issued Books page --- #}
                         <a href="{% url 'view_issued_book' %}" class="mb-0 text-muted">View Issued Books &rarr;</a>
+                        {# --- Removed Overdue link from here to put it in its own card --- #}
+                        {# <a href="{% url 'overdue_books_report' %}" class="mb-0 text-danger">View Overdue Books &rarr;</a> #}
+                        {# --- End Updated Links --- #}
+                    </div>
+                </div>
+            </div>
+
+             {# Card for Overdue Books (New Card) #}
+            <div class="col-sm-6 col-xl-3"> {# Adjusted column size #}
+                <div class="card">
+                    <div class="card-body">
+                         <div class="row">
+                            <div class="col mt-0">
+                                <h5 class="card-title">Overdue Books</h5> {# New Card Title #}
+                            </div>
+                            <div class="col-auto">
+                                <div class="stat text-danger"> {# Using text-danger for overdue #}
+                                     {# Feather icon for alert-circle or similar #}
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-alert-circle align-middle me-2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                </div>
+                            </div>
+                        </div>
+                        {# --- Updated: Use the new variable for overdue count --- #}
+                        <h1 class="mt-1 mb-3">{{ overdue_count }}</h1>
+                        {# --- Add link to Overdue Books Report page --- #}
+                        <a href="{% url 'overdue_books_report' %}" class="mb-0 text-danger">View Overdue Books &rarr;</a>
                         {# --- End Updated --- #}
                     </div>
                 </div>
             </div>
+
 
              {# Card for Total Students #}
             <div class="col-sm-6 col-xl-3"> {# Adjusted column size #}
@@ -164,6 +192,36 @@
               {% endcomment %}
 
         </div> {# End row #}
+
+         {# Potential area for charts, recent activity, etc. #}
+        {% comment %}
+        <div class="row">
+            <div class="col-xl-6 col-xxl-7">
+                <div class="card flex-fill w-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Recent Activity</h5>
+                    </div>
+                    <div class="card-body py-3">
+                        {# Add recent issues, returns, or hold activities here #}
+                        <p>Display recent library activity here...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6 col-xxl-5 d-flex">
+                <div class="card flex-fill w-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Book Trends (Example Chart)</h5>
+                    </div>
+                    <div class="card-body py-3">
+                        {# Add a chart here, e.g., using Chart.js and passing data from the view #}
+                        <canvas id="chartjs-dashboard-line"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endcomment %}
+
+
     </div> {# End container-fluid #}
 
 </main>
@@ -172,4 +230,5 @@
 {% block js %}
     {# Add any specific JavaScript needed for this page here #}
     {# Ensure your base template includes the Feather icons script if you're using them #}
+    {# If adding charts, include the Chart.js library and your chart rendering script #}
 {% endblock js%}
