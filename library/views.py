@@ -231,7 +231,7 @@ def Search_book_admin(request):
 
 
 
-@login_required(login_url='/admin_login')
+# @login_required(login_url='/admin_login')
 def returned(request, pk):
     """ Marks an issued book as returned and notifies the next student on hold if any. """
     issued_book = get_object_or_404(IssuedBook, id=pk)

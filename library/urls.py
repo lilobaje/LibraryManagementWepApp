@@ -32,7 +32,7 @@ urlpatterns = [
     path("issue_book/", views.issue_book, name="issue_book"),
     path("view_issued_book/", views.view_issued_book, name="view_issued_book"),
     path("delete_issued/<int:id>/", views.delete_issued, name="delete_issued"),
-    path('returned/<int:id>/', views.returned, name="returned"),
+    path('returned/<int:pk>/', views.returned, name="returned"),
     path('not_returned/<int:id>/', views.not_returned, name="not_returned"),
 
     # URLs for Hold System
