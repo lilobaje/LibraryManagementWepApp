@@ -1,0 +1,153 @@
+{# your_app_name/templates/student/edit_profile.html #}
+{% extends 'student/base.html' %}
+{% load static %} {# Load static if you need it for a default image preview #}
+
+{% block title %}Edit Profile - {{ user.get_full_name|default:user.username }}{% endblock %} {# Dynamic page title #}
+
+{% block main_content %}
+<main class="content">
+     <div class="container mt-4"> {# Use container for consistent spacing #}
+
+         {# --- Display Messages --- #}
+         {% if messages %}
+             <ul class="messages">
+                 {% for message in messages %}
+                     <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                 {% endfor %}
+             </ul>
+         {% endif %}
+         {# --- End Messages --- #}
+
+
+         <div class="row justify-content-center"> {# Center the form card #}
+             <div class="col-md-8"> {# Adjust column size as needed #}
+                 <div class="card mb-3">
+                     <div class="card-header">
+                         <h5 class="card-title mb-0">Edit Your Profile</h5>
+                     </div>
+                     <div class="card-body">
+
+                         <form method="POST" enctype="multipart/form-data">
+                             {% csrf_token %}
+
+                             {# --- Personal Information Section --- #}
+                             <h6>Personal Information</h6>
+                             <hr>
+
+                             <div class="row mb-3">
+                                 <div class="col-md-6">
+                                     <label for="id_first_name" class="form-label">First Name</label>
+                                     <input type="text" class="form-control" id="id_first_name" name="first_name" value="{{ user.first_name|default:'' }}"> {# Pre-fill with current value #}
+                                 </div>
+                                 <div class="col-md-6">
+                                     <label for="id_last_name" class="form-label">Last Name</label>
+                                     <input type="text" class="form-control" id="id_last_name" name="last_name" value="{{ user.last_name|default:'' }}"> {# Pre-fill with current value #}
+                                 </div>
+                             </div>
+
+                             <div class="mb-3">
+                                 <label for="id_email" class="form-label">Email address</label>
+                                 <input type="email" class="form-control" id="id_email" name="email" value="{{ user.email|default:'' }}"> {# Pre-fill with current value #}
+                             </div>
+                             {# --- End Personal Information Section --- #}
+
+
+                             {# --- Contact Information Section --- #}
+                             <h6 class="mt-4">Contact Information</h6>
+                             <hr>
+
+                             <div class="mb-3">
+                                 <label for="id_phone" class="form-label">Phone Number</label>
+                                 <input type="text" class="form-control" id="id_phone" name="phone" value="{{ student.phone|default:'' }}"> {# Pre-fill with current value #}
+                             </div>
+
+                             <div class="mb-3">
+                                 <label for="id_address" class="form-label">Address</label>
+                                 <textarea class="form-control" id="id_address" name="address" rows="3">{{ student.address|default:'' }}</textarea> {# Pre-fill with current value #}
+                             </div>
+
+                              <div class="row mb-3">
+                                 <div class="col-md-6">
+                                     <label for="id_guardian_name" class="form-label">Guardian Name</label>
+                                     <input type="text" class="form-control" id="id_guardian_name" name="guardian_name" value="{{ student.guardian_name|default:'' }}"> {# Pre-fill with current value #}
+                                 </div>
+                                 <div class="col-md-6">
+                                     <label for="id_guardian_phone" class="form-label">Guardian Phone</label>
+                                     <input type="text" class="form-control" id="id_guardian_phone" name="guardian_phone" value="{{ student.guardian_phone|default:'' }}"> {# Pre-fill with current value #}
+                                 </div>
+                             </div>
+                             {# --- End Contact Information Section --- #}
+
+
+                             {# --- Library / Academic Information Section --- #}
+                              <h6 class="mt-4">Library / Academic Information</h6>
+                             <hr>
+
+                             <div class="mb-3">
+                                 <label for="id_branch" class="form-label">Branch Name</label>
+                                 <input type="text" class="form-control" id="id_branch" name="branch" value="{{ student.branch|default:'' }}"> {# Pre-fill with current value #}
+                             </div>
+
+                              <div class="mb-3">
+                                  <label for="id_classroom" class="form-label">Class</label> {# Changed label #}
+                                  <input type="text" class="form-control" id="id_classroom" name="classroom" value="{{ student.classroom|default:'' }}"> {# Made visible, Pre-fill #}
+                              </div>
+
+                              {# Admission Number - Not editable by student, can display if needed #}
+                              <div class="mb-3">
+                                  <label class="form-label">Admission Number</label>
+                                   <p class="form-control-static">{{ student.adm_no|default:"N/A" }}</p> {# Display Adm No, not editable #}
+                              </div>
+
+                             {# Add other library/academic info fields here if editable by student #}
+                             {# --- End Library / Academic Information Section --- #}
+
+                             {# --- Profile Image Section --- #}
+                             <h6 class="mt-4">Profile Image</h6>
+                             <hr>
+
+                             <div class="mb-3">
+                                 <label for="id_image" class="form-label">Upload New Image</label>
+                                 <input class="form-control" type="file" id="id_image" name="image">
+                                 {# Display current image if exists #}
+                                 {% if student.image %}
+                                     <div class="mt-2">
+                                         <p>Current Image:</p>
+                                         <img src="{{ student.image.url }}" alt="Current Profile Image" style="max-width: 100px; height: auto;">
+                                         {# Optional: Add a checkbox to clear the image #}
+                                         {% comment %}
+                                         <div class="form-check mt-2">
+                                             <input class="form-check-input" type="checkbox" name="clear_image" id="id_clear_image">
+                                             <label class="form-check-label" for="id_clear_image">Clear Image</label>
+                                         </div>
+                                         {% endcomment %}
+                                     </div>
+                                 {% endif %}
+                             </div>
+                             {# --- End Profile Image Section --- #}
+
+
+                             {# --- Submit Button --- #}
+                             <div class="mt-4">
+                                 <button type="submit" class="btn btn-primary">Save Changes</button>
+                                 {# Optional: Add a Cancel button #}
+                                 <a href="{% url 'profile' %}" class="btn btn-secondary">Cancel</a> {# Link back to profile display #}
+                             </div>
+                             {# --- End Submit Button --- #}
+
+                         </form>
+
+                     </div> {# End card-body #}
+                 </div> {# End card #}
+             </div> {# End col-md-8 #}
+         </div> {# End justify-content-center row #}
+
+
+     </div> {# End container #}
+</main>
+
+{% endblock main_content %}
+
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+{% endblock js%}

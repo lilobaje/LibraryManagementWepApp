@@ -1,77 +1,163 @@
+{# your_app_name/templates/admin_temp/edit_book.html #}
 {% extends 'admin_temp/base.html' %}
+{% load static %} {# Load static if you need it for current image display #}
 
- <!-- Main content -->
- {% block main_content %} 
- <main class="content">
+{% block title %}Edit Book - {{ book.name|default:"New Book" }}{% endblock %} {# Dynamic page title #}
 
-    <div class="row">
-        <div class="col-12 col-lg-12">
-           <form role="form" method="POST" action="/edit_book_save" enctype="multipart/form-data">
+{% block main_content %}
+<main class="content">
+    <div class="container mt-4"> {# Use container for consistent spacing #}
 
-            {% csrf_token %}
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Book Title</h5>
-                </div>
-                <div class="card-body">
-                    <input type="text" class="form-control" value="{{ book.name }}"  name="name">
-                </div>
+        {# --- Display Messages --- #}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# --- End Messages --- #}
 
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Author</h5>
-                </div>
-                <div class="card-body">
-                    <input type="text" class="form-control" value="{{ book.author }}" placeholder="Enter Authors Name" name="author">
-                </div>
+        <div class="row justify-content-center"> {# Center the form card #}
+            <div class="col-md-8"> {# Adjust column size as needed #}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Edit Book Details</h5>
+                    </div>
+                    <div class="card-body">
 
-               
+                        {# Form action posts to the edit_book_save URL #}
+                        {# Pass book.id in a hidden input field #}
+                        <form method="POST" action="{% url 'edit_book_save' %}" enctype="multipart/form-data">
+                            {% csrf_token %}
 
-                <div class="card-header">
-                    <h5 class="card-title mb-0">ISBN Number</h5>
-                </div>
-                <div class="card-body">
-                    <input type="text" class="form-control"  value="{{ book.isbn }}"  placeholder="Enter Book ISBN" name="isbn">
-                </div>
+                            {# Hidden input to pass the book ID to the save view #}
+                            <input type="hidden" name="book_id" value="{{ book.id }}">
 
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Book Image</h5>
-                </div>
-                <div class="card-body">
-                    <input class="form-control form-control-lg" type="file" name="image" placeholder="Select Display Picture">
-                </div>
+                            {# Book Title #}
+                            <div class="mb-3">
+                                <label for="id_name" class="form-label">Book Title</label>
+                                <input type="text" class="form-control" id="id_name" name="name" value="{{ book.name|default:'' }}" required>
+                            </div>
+
+                            {# Author #}
+                            <div class="mb-3">
+                                <label for="id_author" class="form-label">Author</label>
+                                <input type="text" class="form-control" id="id_author" name="author" value="{{ book.author|default:'' }}" required>
+                            </div>
+
+                            {# ISBN Number #}
+                            <div class="mb-3">
+                                <label for="id_isbn" class="form-label">ISBN Number</label>
+                                {# ISBN is often not editable after creation, but keeping as input if needed #}
+                                <input type="text" class="form-control" id="id_isbn" name="isbn" value="{{ book.isbn|default:'' }}" required>
+                            </div>
+
+                             {# Book Description #}
+                             <div class="mb-3">
+                                 <label for="id_description" class="form-label">Book Description</label>
+                                 <textarea class="form-control" id="id_description" name="description" rows="3">{{ book.description|default:'' }}</textarea>
+                             </div>
+
+                            {# Genres (Many-to-Many) - Using Checkboxes #}
+                            <div class="mb-3">
+                                <label class="form-label d-block">Genres</label> {# d-block makes the label a block element #}
+                                {# Loop through genres passed from the view #}
+                                {% for genre in genres %} {# Changed variable name from 'categories' to 'genres' #}
+                                    <div class="form-check form-check-inline"> {# Use form-check-inline for horizontal checkboxes #}
+                                        <input class="form-check-input" type="checkbox" name="genres" id="genre_{{ genre.id }}" value="{{ genre.name }}"
+                                               {% if genre in book.genres.all %}checked{% endif %}> {# Check if this genre is associated with the book #}
+                                        <label class="form-check-label" for="genre_{{ genre.id }}">{{ genre.name }}</label>
+                                    </div>
+                                {% empty %} {# Message if no genres are available #}
+                                    <p>No genres available. Please add some genres first.</p>
+                                {% endfor %}
+                            </div>
+
+                             {# Quantity and Available Quantity #}
+                             <div class="row mb-3">
+                                 <div class="col-md-6">
+                                     <label for="id_quantity" class="form-label">Total Quantity</label>
+                                     <input type="number" class="form-control" id="id_quantity" name="quantity" value="{{ book.quantity|default:0 }}" min="0" required>
+                                 </div>
+                                 <div class="col-md-6">
+                                     <label for="id_available_quantity" class="form-label">Available Quantity</label>
+                                     {# available_quantity is often updated automatically, but allow editing if needed #}
+                                     <input type="number" class="form-control" id="id_available_quantity" name="available_quantity" value="{{ book.available_quantity|default:0 }}" min="0" required>
+                                 </div>
+                             </div>
+
+                             {# Additional Fields from edit_book_save view #}
+                              <div class="mb-3">
+                                 <label for="id_publication_date" class="form-label">Publication Date</label>
+                                 {# Use type="date" if your model field is a DateField #}
+                                 <input type="text" class="form-control" id="id_publication_date" name="publication_date" value="{{ book.publication_date|default:'' }}"> {# Adjust type if DateField #}
+                             </div>
+                             <div class="mb-3">
+                                 <label for="id_publisher" class="form-label">Publisher</label>
+                                 <input type="text" class="form-control" id="id_publisher" name="publisher" value="{{ book.publisher|default:'' }}">
+                             </div>
+                             <div class="mb-3">
+                                 <label for="id_editor" class="form-label">Editor</label>
+                                 <input type="text" class="form-control" id="id_editor" name="editor" value="{{ book.editor|default:'' }}">
+                             </div>
+                             <div class="mb-3">
+                                 <label for="id_edition" class="form-label">Edition</label>
+                                 <input type="text" class="form-control" id="id_edition" name="edition" value="{{ book.edition|default:'' }}">
+                             </div>
+                             <div class="mb-3">
+                                 <label for="id_language" class="form-label">Language</label>
+                                 <input type="text" class="form-control" id="id_language" name="language" value="{{ book.language|default:'' }}">
+                             </div>
+                             <div class="mb-3">
+                                 <label for="id_pages" class="form-label">Pages</label>
+                                 <input type="number" class="form-control" id="id_pages" name="pages" value="{{ book.pages|default:'' }}" min="0"> {# Added min="0" #}
+                             </div>
+                             {# End Additional Fields #}
 
 
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Book Description</h5>
-                </div>
-                <div class="card-body">
-                    <input type="text" class="form-control"  value="{{ book.description }}"  placeholder="Enter Description" name="description">
-                </div>
+                            {# Book Image #}
+                            <div class="mb-3">
+                                <label for="id_image" class="form-label">Book Image</label>
+                                <input class="form-control" type="file" id="id_image" name="image">
+                                {# Display current image if exists #}
+                                {% if book.image %}
+                                    <div class="mt-2">
+                                        <p>Current Image:</p>
+                                        <img src="{{ book.image.url }}" alt="{{ book.name }} Image" style="max-width: 100px; height: auto;">
+                                        {# Optional: Add a checkbox to clear the image #}
+                                        {% comment %}
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" name="clear_image" id="id_clear_image">
+                                            <label class="form-check-label" for="id_clear_image">Clear Image</label>
+                                        </div>
+                                        {% endcomment %}
+                                    </div>
+                                {% endif %}
+                            </div>
 
 
+                             {# --- Submit Button --- #}
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary me-2">Save Changes</button>
+                                {# Optional: Add a Cancel button #}
+                                 <a href="{% url 'book_detail' book.id %}" class="btn btn-secondary">Cancel</a> {# Link back to book detail #}
+                            </div>
+                             {# --- End Submit Button --- #}
 
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Category</h5>
-                </div>
-                <div class="card-body">
-                   <select class="form-control"  value="{{ book.category }}"  name="category">
-                          <option>Science</option>
-                          <option>Art</option>
-                          <option>Action</option>
-                          <option>Poetry</option>
-                          <option>Music</option>
-                        </select>
-                </div>
-                <button type="submit" class="btn btn-outline-primary mt-4">Edit Book</button>
-            </div>
+                        </form>
 
-        </form>
-        </div>
+                    </div> {# End card-body #}
+                </div> {# End card #}
+            </div> {# End col-md-8 #}
+        </div> {# End justify-content-center row #}
 
-       
-    </div>
- 
- </main>
- 
- {% endblock main_content %}
-  <!-- /.content -->
+    </div> {# End container #}
+</main>
+
+{% endblock main_content %}
+
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+    {# You might need a date picker for the publication_date field #}
+{% endblock js%}

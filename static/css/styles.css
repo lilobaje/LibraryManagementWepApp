@@ -11777,3 +11777,21 @@ section#contact form#contactForm :-ms-input-placeholder {
   font-size: 0.9rem;
   font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
+
+.custom-footer {
+  background-color: #343a40; /* Dark background color (Bootstrap dark theme background) */
+  color: #f8f9fa; /* Light text color (Bootstrap light text) */
+  /* You can add more styling here, like padding, font size, etc. */
+}
+
+.custom-footer a.text-white {
+  color: #007bff !important; /* Example: Bootstrap primary blue for links, !important to override text-white */
+  /* You can change the link color here */
+}
+
+/* If you used text-muted class on the link before, you might need this instead: */
+/*
+.custom-footer a.text-muted {
+  color: #007bff !important;
+}
+*/

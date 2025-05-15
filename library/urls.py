@@ -41,11 +41,11 @@ urlpatterns = [
     # Added URL for canceling holds
     path('cancel_hold/<int:hold_id>/', views.cancel_hold, name='cancel_hold'),
 
-
+    path('student/dashboard/', views.student_dash, name='student_dash'),
     # URLs for Student Profile and Authentication
     path("student_issued_books/", views.student_issued_books, name="student_issued_books"),
     path("profile/", views.profile, name="profile"),
-    path("edit_profile/", views.edit_profile, name="edit_profile"),
+    path("edit_student_profile/", views.edit_student_profile, name="edit_student_profile"),
     # Note: Django's auth.urls includes a password change view at /accounts/password_change/
     # You might want to remove or rename your custom 'change_password' view if you use the built-in one.
     path("change_password/", views.change_password, name="change_password"),

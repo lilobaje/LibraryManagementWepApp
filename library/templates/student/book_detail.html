@@ -1,0 +1,169 @@
+{# your_app_name/templates/student/book_detail.html #}
+{% extends 'student/base.html' %} {# Ensure this matches your student base template #}
+{% load static %} {# Load static if you need it for the book image #}
+{% load custom_filters %}
+{% block title %}Book Details - {{ book.name|default:"Unknown Book" }}{% endblock %} {# Dynamic page title #}
+
+{% block main_content %}
+<main class="content">
+    <div class="container mt-4"> {# Use container for consistent spacing #}
+
+        {# --- Display Messages --- #}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# --- End Messages --- #}
+
+        <div class="row">
+            <div class="col-12">
+                 <h1 class="h3 mb-3">Book Details: <strong>{{ book.name }}</strong></h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-center mb-3 mb-md-0"> {# Column for book image #}
+                {% if book.image %}
+                    <img src="{{ book.image.url }}" alt="{{ book.name }} Cover" class="img-fluid rounded" style="max-width: 200px; height: auto;"> {# Adjust size as needed #}
+                {% else %}
+                    {# Replace with a path to a default book cover image in your static files #}
+                    <img src="{% static 'path/to/default_book_cover.png' %}" alt="Default Book Cover" class="img-fluid rounded" style="max-width: 200px; height: auto;">
+                {% endif %}
+            </div>
+
+            <div class="col-md-8"> {# Column for book information #}
+                <h4 class="mb-3">{{ book.name }}</h4> {# Book Title #}
+                <p class="text-muted">by {{ book.author|default:"Unknown Author" }}</p> {# Author #}
+
+                <hr>
+
+                {# --- Key Details --- #}
+                <div class="row mb-2">
+                    <div class="col-sm-4"><strong>ISBN:</strong></div>
+                    <div class="col-sm-8">{{ book.isbn|default:"N/A" }}</div>
+                </div>
+                 <div class="row mb-2">
+                     <div class="col-sm-4"><strong>Genre(s):</strong></div>
+                     <div class="col-sm-8">
+                         {% if book.genres.all %}
+                             {% for genre in book.genres.all %}
+                                 <span class="badge bg-info me-1">{{ genre.name }}</span> {# Display genres as badges #}
+                             {% endfor %}
+                         {% else %}
+                             N/A
+                         {% endif %}
+                     </div>
+                 </div>
+                 <div class="row mb-2">
+                     <div class="col-sm-4"><strong>Publication Date:</strong></div>
+                     <div class="col-sm-8">{{ book.publication_date|default:"N/A" }}</div>
+                 </div>
+                  <div class="row mb-2">
+                      <div class="col-sm-4"><strong>Publisher:</strong></div>
+                      <div class="col-sm-8">{{ book.publisher|default:"N/A" }}</div>
+                  </div>
+                   <div class="row mb-2">
+                       <div class="col-sm-4"><strong>Edition:</strong></div>
+                       <div class="col-sm-8">{{ book.edition|default:"N/A" }}</div>
+                   </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-4"><strong>Language:</strong></div>
+                        <div class="col-sm-8">{{ book.language|default:"N/A" }}</div>
+                    </div>
+                     <div class="row mb-2">
+                         <div class="col-sm-4"><strong>Pages:</strong></div>
+                         <div class="col-sm-8">{{ book.pages|default:"N/A" }}</div>
+                     </div>
+                {# --- End Key Details --- #}
+
+                 <hr>
+
+                 {# --- Availability and Hold Information (Student Specific) --- #}
+                 <h6 class="text-muted mb-2">Availability</h6>
+                  <div class="row mb-2">
+                      <div class="col-sm-4"><strong>Available Copies:</strong></div>
+                      <div class="col-sm-8">{{ book.available_quantity|default:0 }}</div>
+                  </div>
+
+                  {# Hold Status and Actions #}
+                  <div class="mt-3">
+                      {% if book.available_quantity > 0 %}
+                          {# Book is available - No hold needed #}
+                          <span class="badge bg-success">Available</span>
+                          <p class="mt-2">This book is currently available for borrowing.</p>
+
+                      {% else %} {# Book is not available #}
+
+                          {% if user_has_hold %}
+                              {# User has an active hold on this book #}
+                              <span class="badge bg-warning">On Hold by You</span>
+                              <p class="mt-2">You have an active hold on this book.</p>
+                              {# Display position in queue if calculated in the view #}
+                              {% if user_hold_position is not None %} {# Check if position was calculated #}
+                                  <p>Your position in the queue: <strong>{{ user_hold_position }}</strong></p>
+                              {% else %}
+                                  <p>Your position in the queue is being determined.</p> {# Fallback message #}
+                              {% endif %}
+
+                              {# Display total queue size #}
+                              {% if active_holds_count > 0 %}
+                                   <p class="text-muted small">{{ active_holds_count }} people are in the queue.</p>
+                              {% endif %}
+
+
+                              {# Cancel Hold Button #}
+                              {% if user_has_hold %} {# Double check user_has_hold before showing cancel button #}
+                                   {# Assuming your cancel_hold view can work with book_id and user #}
+                                   <a href="{% url 'cancel_hold' book.id %}" class="btn btn-danger mt-2" onclick="return confirm('Are you sure you want to cancel your hold on this book?')">Cancel My Hold</a> {# Assuming cancel_hold takes book.id #}
+                              {% endif %}
+
+
+                          {% else %}
+                              {# Book is unavailable, and user does NOT have an active hold #}
+                              <span class="badge bg-danger">Currently Unavailable</span>
+                              <p class="mt-2">This book is currently unavailable.</p>
+                              {# Display total queue size #}
+                              {% if active_holds_count > 0 %}
+                                   <p class="text-muted small">{{ active_holds_count }} people are in the queue.</p>
+                              {% endif %}
+
+                              {# Place Hold Button #}
+                              {% if request.user.is_authenticated and is_student_user %} {# Only show place hold if logged in as a student #}
+                                   <a href="{% url 'place_hold' book.id %}" class="btn btn-warning mt-2">Place Hold</a> {# Ensure 'place_hold' is the correct URL name #}
+                              {% else %}
+                                   {# Message for non-logged-in users or non-students #}
+                                   <p class="mt-2 text-muted">Log in as a student to place a hold.</p>
+                              {% endif %}
+
+
+                          {% endif %} {# End if user_has_hold #}
+
+                      {% endif %} {# End if book.available_quantity > 0 #}
+
+                  </div>
+                 {# --- End Availability and Hold Information --- #}
+
+
+                {# Optional: Book Description #}
+                 {% if book.description %}
+                     <hr>
+                     <h6 class="text-muted mb-2">Description</h6>
+                     <p>{{ book.description }}</p>
+                 {% endif %}
+
+
+            </div> {# End column for book information #}
+        </div> {# End row for image and info #}
+
+
+    </div> {# End container #}
+</main>
+
+{% endblock main_content %}
+
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+{% endblock js%}

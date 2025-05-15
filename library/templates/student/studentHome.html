@@ -1,41 +1,169 @@
 {% extends 'student/base.html' %}
+{% load static %} {# Load static if you need it for a default image #}
 
- <!-- Main content -->
- {% block main_content %} 
- <main class="content">
-    <div class="row">
-        <div class="col-md-12 col-xl-12">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Profile Details</h5>
-                </div>
-                <div class="card-body text-center">
-                    <img src="{{user.student.image.url}}" alt="Christina Mason" class="img-fluid rounded-circle mb-2" width="128" height="128">
-                    <h5 class="card-title mb-0">{{user.get_full_name}}</h5>
-                    
-                    <div class="text-muted mb-2">  <label>ID:</label>{{user.id}}</div>
-                    <div class="text-muted mb-2">  <label>Username:</label>{{user}}</div>
-                   
-                    <div class="text-muted mb-2">  <label>Email:</label>{{user.email}}</div>
-                    <div class="text-muted mb-2">  <label>Phone Number:</label>{{user.student.phone}}</div>
-                    <div class="text-muted mb-2">  <label>Branch:</label>{{user.student.branch}}</div>
-                    <div class="text-muted mb-2">  <label>Class:</label>{{user.student.classroom}}</div>
-                    <div class="text-muted mb-2">  <label>Adm Number:</label>{{user.student.adm_no}}</div>
-                  
-                </div>
-                <hr class="my-0">
-                <div class="card-body">
-                   
-                </div>
-                <hr class="my-0">
-          
-            </div>
-        </div>
+{% block title %}{{ user.get_full_name|default:user.username }}'s Profile{% endblock %} {# Dynamic page title #}
 
-      
-    </div>
-    
- </main>
- 
- {% endblock main_content %}
-  <!-- /.content -->
+{% block main_content %}
+<main class="content">
+    <div class="container mt-4"> {# Use container for consistent spacing #}
+
+        {# --- Display Messages --- #}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# --- End Messages --- #}
+
+        <div class="row justify-content-center"> {# Center the profile card #}
+            <div class="col-md-8"> {# Adjust column size as needed #}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">{{ user.get_full_name|default:user.username }}'s Profile Details</h5> {# Dynamic card title #}
+                    </div>
+                    <div class="card-body"> {# Removed text-center from card-body #}
+
+                        <div class="row"> {# Row for image and main details #}
+                            <div class="col-md-4 text-center mb-3 mb-md-0"> {# Column for image (centered on small screens) #}
+                                {# Display profile image or a default image #}
+                                {% if user.student.image %}
+                                    <img src="{{ user.student.image.url }}" alt="{{ user.get_full_name|default:user.username }} Profile" class="img-fluid rounded-circle" width="128" height="128">
+                                {% else %}
+                                    {# Replace with a path to your default student profile image #}
+                                    <img src="{% static 'path/to/default_profile_image.png' %}" alt="Default Profile Image" class="img-fluid rounded-circle" width="128" height="128">
+                                {% endif %}
+                                {# Optional: Add upload/change photo link #}
+                                {% comment %}
+                                <div class="mt-2">
+                                    <a href="#">Change Photo</a>
+                                </div>
+                                {% endcomment %}
+                            </div>
+
+                            <div class="col-md-8"> {# Column for profile details #}
+                                <h4 class="mb-3">{{ user.get_full_name|default:user.username }}</h4> {# Full name heading #}
+
+                                {# --- Personal Information Section --- #}
+                                <h6 class="text-muted mb-2">Personal Information</h6>
+                                <div class="row mb-1">
+                                    <div class="col-sm-4"><p class="mb-0"><strong>Username:</strong></p></div>
+                                    <div class="col-sm-8"><p class="mb-0">{{ user.username }}</p></div>
+                                </div>
+                                <div class="row mb-1">
+                                     <div class="col-sm-4"><p class="mb-0"><strong>Student ID:</strong></p></div> {# Using Student ID #}
+                                     <div class="col-sm-8"><p class="mb-0">{{ user.student.adm_no }}</p></div> {# Display Adm No #}
+                                </div>
+                                 <div class="row mb-1">
+                                    <div class="col-sm-4"><p class="mb-0"><strong>User ID:</strong></p></div> {# Django User ID #}
+                                    <div class="col-sm-8"><p class="mb-0">{{ user.id }}</p></div>
+                                </div>
+                                {# Add other personal info fields here #}
+                                {# --- End Personal Information Section --- #}
+
+                                <hr class="my-3">
+
+                                {# --- Contact Information Section --- #}
+                                <h6 class="text-muted mb-2">Contact Information</h6>
+                                <div class="row mb-1">
+                                    <div class="col-sm-4"><p class="mb-0"><strong>Email:</strong></p></div>
+                                    <div class="col-sm-8"><p class="mb-0">{{ user.email|default:"N/A" }}</p></div> {# Display N/A if no email #}
+                                </div>
+                                <div class="row mb-1">
+                                    <div class="col-sm-4"><p class="mb-0"><strong>Phone:</strong></p></div>
+                                    <div class="col-sm-8"><p class="mb-0">{{ user.student.phone|default:"N/A" }}</p></div> {# Display N/A if no phone #}
+                                </div>
+                                <div class="row mb-1">
+                                    <div class="col-sm-4"><p class="mb-0"><strong>Address:</strong></p></div>
+                                    <div class="col-sm-8"><p class="mb-0">{{ user.student.address|default:"N/A" }}</p></div> {# Display Address #}
+                                </div>
+                                 <div class="row mb-1">
+                                     <div class="col-sm-4"><p class="mb-0"><strong>Guardian Name:</strong></p></div>
+                                     <div class="col-sm-8"><p class="mb-0">{{ user.student.guardian_name|default:"N/A" }}</p></div> {# Display Guardian Name #}
+                                 </div>
+                                  <div class="row mb-1">
+                                     <div class="col-sm-4"><p class="mb-0"><strong>Guardian Phone:</strong></p></div>
+                                     <div class="col-sm-8"><p class="mb-0">{{ user.student.guardian_phone|default:"N/A" }}</p></div> {# Display Guardian Phone #}
+                                 </div>
+                                {# --- End Contact Information Section --- #}
+
+                                 <hr class="my-3">
+
+                                {# --- Library / Academic Information Section --- #}
+                                <h6 class="text-muted mb-2">Library / Academic Information</h6>
+                                <div class="row mb-1">
+                                     <div class="col-sm-4"><p class="mb-0"><strong>Branch:</strong></p></div>
+                                     <div class="col-sm-8"><p class="mb-0">{{ user.student.branch|default:"N/A" }}</p></div> {# Display Branch #}
+                                </div>
+                                <div class="row mb-1">
+                                     <div class="col-sm-4"><p class="mb-0"><strong>Class:</strong></p></div>
+                                     <div class="col-sm-8"><p class="mb-0">{{ user.student.classroom|default:"N/A" }}</p></div> {# Display Classroom #}
+                                </div>
+                                {# Add Total Fines here if implemented #}
+                                {% comment %}
+                                <div class="row mb-1">
+                                    <div class="col-sm-4"><p class="mb-0"><strong>Outstanding Fines:</strong></p></div>
+                                    <div class="col-sm-8"><p class="mb-0">{{ user.student.total_fines|default:"0.00" }}</p></div> {# Display Total Fines #}
+                                </div>
+                                {% endcomment %}
+                                {# Add other library/academic info here #}
+                                {# --- End Library / Academic Information Section --- #}
+
+                                <hr class="my-3">
+
+                                {# --- Actions Section --- #}
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="text-muted mb-2">Actions</h6>
+                                        {# Add links to relevant actions #}
+                                        <a href="{% url 'edit_student_profile' %}" class="btn btn-primary btn-sm me-2">Edit Profile</a> {# Placeholder link #}
+                                        <a href="{% url 'change_password' %}" class="btn btn-secondary btn-sm">Change Password</a> {# Link assuming 'change_password' URL name #}
+                                        {# Add more action links here #}
+                                    </div>
+                                </div>
+                                {# --- End Actions Section --- #}
+
+                            </div> {# End column for profile details #}
+                        </div> {# End row for image and main details #}
+
+                    </div> {# End card-body #}
+                     {# Removed the extra hr and empty card-body #}
+                </div> {# End card #}
+
+                {# Optional: Add sections for Issued Books, Holds, Fines below the profile card #}
+                 {% comment %}
+                 <div class="card mb-3">
+                     <div class="card-header">
+                         <h5 class="card-title mb-0">My Issued Books</h5>
+                     </div>
+                     <div class="card-body">
+                         {# Include the content of your student_issued_books template here or link to it #}
+                         <p>Display issued books list here or link to Issued Books page...</p>
+                         <a href="{% url 'student_issued_books' %}">View All Issued Books</a>
+                     </div>
+                 </div>
+
+                  <div class="card mb-3">
+                      <div class="card-header">
+                          <h5 class="card-title mb-0">My Holds</h5>
+                      </div>
+                      <div class="card-body">
+                          {# Include the content of your my_holds template here or link to it #}
+                          <p>Display holds list here or link to My Holds page...</p>
+                           <a href="{% url 'my_holds' %}">View All Holds</a>
+                      </div>
+                  </div>
+                 {% endcomment %}
+
+            </div> {# End col-md-8 #}
+        </div> {# End justify-content-center row #}
+
+    </div> {# End container #}
+</main>
+
+{% endblock main_content %}
+
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+{% endblock js%}

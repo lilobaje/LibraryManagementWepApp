@@ -1,0 +1,146 @@
+{# your_app_name/templates/student/student_dash.html #}
+{% extends 'student/base.html' %} {# Ensure this matches your student base template #}
+{% load static %} {# Load static if needed #}
+
+{% block title %}{{ user.get_full_name|default:user.username }}'s Dashboard{% endblock %} {# Dynamic page title #}
+
+{% block main_content %}
+<main class="content">
+
+    <div class="container-fluid p-0">
+
+        {# --- Display Messages --- #}
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {# --- End Messages --- #}
+
+        <h1 class="h3 mb-3"><strong>Welcome,</strong> {{ user.get_full_name|default:user.username }}!</h1> {# Personalized welcome heading #}
+
+        <div class="row">
+
+            {# Card for Issued Books Count #}
+            <div class="col-sm-6 col-xl-4"> {# Adjust column size #}
+                <div class="card">
+                    <div class="card-body">
+                         <div class="row">
+                            <div class="col mt-0">
+                                <h5 class="card-title">Books Issued</h5> {# Card Title #}
+                            </div>
+                            <div class="col-auto">
+                                <div class="stat text-primary">
+                                     {# Feather icon for book-open #}
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open align-middle me-2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <h1 class="mt-1 mb-3">{{ student_issued_books_count }}</h1> {# Display issued books count #}
+                        {# Link to view student's issued books #}
+                        <a href="{% url 'student_issued_books' %}" class="mb-0 text-muted">View My Issued Books &rarr;</a>
+                    </div>
+                </div>
+            </div>
+
+             {# Card for Active Holds Count #}
+            <div class="col-sm-6 col-xl-4"> {# Adjust column size #}
+                <div class="card">
+                    <div class="card-body">
+                         <div class="row">
+                            <div class="col mt-0">
+                                <h5 class="card-title">Active Holds</h5> {# Card Title #}
+                            </div>
+                            <div class="col-auto">
+                                <div class="stat text-primary">
+                                    {# Feather icon for bookmark #}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bookmark align-middle me-2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <h1 class="mt-1 mb-3">{{ student_holds_count }}</h1> {# Display active holds count #}
+                        {# Link to view student's holds #}
+                        <a href="{% url 'my_holds' %}" class="mb-0 text-muted">View My Holds &rarr;</a>
+                    </div>
+                </div>
+            </div>
+
+            {# Optional: Card for Total Fines (if implemented) #}
+            {% comment %}
+            <div class="col-sm-6 col-xl-4"> {# Adjust column size #}
+                 <div class="card">
+                     <div class="card-body">
+                          <div class="row">
+                             <div class="col mt-0">
+                                 <h5 class="card-title">Outstanding Fines</h5> {# Card Title #}
+                             </div>
+                             <div class="col-auto">
+                                 <div class="stat text-danger"> {# Use text-danger for fines #}
+                                     {# Feather icon for dollar-sign or similar #}
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                 </div>
+                             </div>
+                         </div>
+                         <h1 class="mt-1 mb-3">{{ student.total_fines|default:"0.00" }}</h1> {# Display total fines #}
+                         {# Link to view fines details #}
+                         <a href="#" class="mb-0 text-muted">View Fines &rarr;</a> {# Placeholder link #}
+                     </div>
+                 </div>
+             </div>
+             {% endcomment %}
+
+             {# Optional: Card linking to Book Catalog #}
+             <div class="col-sm-6 col-xl-4"> {# Adjust column size #}
+                  <div class="card">
+                      <div class="card-body">
+                           <div class="row">
+                              <div class="col mt-0">
+                                  <h5 class="card-title">Browse Books</h5> {# Card Title #}
+                              </div>
+                              <div class="col-auto">
+                                  <div class="stat text-primary">
+                                       {# Feather icon for search or book #}
+                                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                  </div>
+                              </div>
+                          </div>
+                          <h1 class="mt-1 mb-3">&nbsp;</h1> {# Placeholder to keep card height consistent #}
+                          {# Link to the book catalog #}
+                          <a href="{% url 'book_list' %}" class="mb-0 text-muted">Browse Library Catalog &rarr;</a>
+                      </div>
+                  </div>
+              </div>
+
+
+        </div> {# End row #}
+
+         {# Optional: Add sections for recent activity, recommended books, etc. #}
+         {% comment %}
+         <div class="row">
+             <div class="col-12">
+                 <div class="card flex-fill">
+                     <div class="card-header">
+                         <h5 class="card-title mb-0">Recently Issued Books</h5>
+                     </div>
+                     <div class="card-body py-3">
+                         {# Display a list of the student's most recently issued books #}
+                         <p>Display recent issued books here...</p>
+                     </div>
+                 </div>
+             </div>
+         </div>
+         {% endcomment %}
+
+
+    </div> {# End container-fluid #}
+
+</main>
+
+{% endblock main_content %}
+
+{% block js %}
+    {# Add any specific JavaScript needed for this page here #}
+    {# Ensure your base template includes the Feather icons script if you're using them #}
+{% endblock js%}

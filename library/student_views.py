@@ -294,3 +294,33 @@ def student_registration(request):
 
                 messages.success(request, "Student registered successfully.")
                 return redirect('student_login')  # ✅ Fixed redirect
+
+
+@login_required(login_url='/student_login/') # Requires student login
+def student_dash(request):
+    """ Displays the dashboard for a logged-in student. """
+    user = request.user
+
+    # --- Check to ensure the logged-in user is a student ---
+    if not hasattr(user, 'student'):
+        messages.error(request, "You must be logged in as a student to access this page.")
+        return redirect('index') # Redirect to index or student login if not a student
+    # --- End of check ---
+
+    student = user.student # Get the related Student object
+
+    # Calculate counts specific to this student
+    # Count active issued books for this student
+    student_issued_books_count = IssuedBook.objects.filter(student=student, book_status='Active').count()
+
+    # Count active holds for this student
+    student_holds_count = Hold.objects.filter(student=student, is_active=True).count()
+
+    context = {
+        'student_issued_books_count': student_issued_books_count,
+        'student_holds_count': student_holds_count,
+        'student': student, # Pass the student object to the template
+        'user': user, # Pass the user object as well
+    }
+    # We will create the student_dash.html template next
+    return render(request, 'student/student_dashboard.html', context)

@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
 from datetime import date
-
+from django.db import transaction # Import transaction for potentially atomic saves
 from LibraryManagementSystem import settings
 from . import forms, models # Assuming forms.py is in the same app directory
 from .forms import StudentForm
@@ -92,57 +92,132 @@ def add_book(request):
     return render(request, "admin_temp/addBook.html", {'genres': genres})
 
 
-@login_required(login_url='/admin_login')
+@login_required(login_url='/admin_login/') # Requires admin login - ensure this URL name/path is correct
 def edit_book(request, book_id):
+    """ Displays the form to edit a specific book's details. """
+    user = request.user
+
+    # --- Check to ensure the logged-in user is a superuser (admin) ---
+    if not user.is_superuser:
+        messages.error(request, "You do not have administrative privileges.")
+        return redirect('dash') # Or redirect('admin_login')
+    # --- End of check ---
+
     book = get_object_or_404(Book, id=book_id)
     # Fetch all genres to display in the form for selection
-    genres = Genre.objects.all()
+    genres = Genre.objects.all() # This correctly fetches genres
+    # Pass 'book' and 'genres' to the template context
     return render(request, "admin_temp/edit_book.html", {'book': book, 'genres': genres})
 
 
-@login_required(login_url='/admin_login')
+@login_required(login_url='/admin_login/') # Requires admin login
 def edit_book_save(request):
+    """ Handles the POST request to save edited book details. """
+    user = request.user
+
+    # --- Check to ensure the logged-in user is a superuser (admin) ---
+    if not user.is_superuser:
+        messages.error(request, "You do not have administrative privileges.")
+        return redirect('dash') # Or redirect('admin_login')
+    # --- End of check ---
+
     if request.method != "POST":
-        return HttpResponse("Method Not Allowed")
-    else:
-        book_id = request.POST.get('book_id') # Assume you pass book_id in a hidden input
-        book = get_object_or_404(Book, id=book_id)
+        messages.error(request, "Method not allowed for this URL.")
+        return redirect('dash') # Redirect if not a POST request
 
-        book.name = request.POST.get('name')
-        book.author = request.POST.get('author')
-        # Decide if ISBN should be editable after creation
-        # book.isbn = request.POST.get('isbn')
-        book.category = request.POST.get('category') # Consider using a ForeignKey
-        book.description = request.POST.get('description', 'Description')
-        book.publication_date = request.POST.get('publication_date')
-        book.publisher = request.POST.get('publisher')
-        book.editor = request.POST.get('editor')
-        book.edition = request.POST.get('edition')
-        book.language = request.POST.get('language')
-        book.pages = request.POST.get('pages')
+    # Use Django's transaction to ensure changes are atomic
+    try:
+        with transaction.atomic():
+            book_id = request.POST.get('book_id') # Get book_id from the hidden input
+            if not book_id:
+                 messages.error(request, "Book ID is missing.")
+                 return redirect('view_books') # Redirect if book_id is missing
 
-        # Handle image update
-        if 'image' in request.FILES:
-            book.image = request.FILES['image']
+            book = get_object_or_404(Book, id=book_id)
 
-        # Update Genres (Many-to-Many)
-        genre_names = request.POST.getlist('genres')
-        genres = []
-        for genre_name in genre_names:
-             genre, created = Genre.objects.get_or_create(name=genre_name)
-             genres.append(genre)
-        book.genres.set(genres)
+            # Get data from the form
+            book.name = request.POST.get('name')
+            book.author = request.POST.get('author')
+            # Decided to allow ISBN to be editable based on the form structure
+            book.isbn = request.POST.get('isbn')
+            book.description = request.POST.get('description', '') # Use empty string default
+            book.publication_date = request.POST.get('publication_date')
+            book.publisher = request.POST.get('publisher')
+            book.editor = request.POST.get('editor')
+            book.edition = request.POST.get('edition')
+            book.language = request.POST.get('language')
+            book.pages = request.POST.get('pages')
+
+            # --- Handle Quantity Update and Validation ---
+            quantity_str = request.POST.get('quantity')
+            available_quantity_str = request.POST.get('available_quantity')
+
+            try:
+                quantity = int(quantity_str) if quantity_str else 0
+                available_quantity = int(available_quantity_str) if available_quantity_str else 0
+
+                if available_quantity > quantity:
+                     messages.error(request, "Available quantity cannot exceed total quantity.")
+                     # Re-render the edit form with the book data (before saving)
+                     # We need to pass genres here as well for the dropdown/checkboxes
+                     genres = Genre.objects.all() # Fetch genres again
+                     return render(request, 'admin_temp/edit_book.html', {'book': book, 'genres': genres}) # Pass data and genres
+
+                book.quantity = quantity
+                book.available_quantity = available_quantity
+
+            except (ValueError, TypeError):
+                 messages.error(request, "Quantity and Available Quantity must be valid numbers.")
+                 # Re-render the edit form with the book data (before saving)
+                 genres = Genre.objects.all() # Fetch genres again
+                 return render(request, 'admin_temp/edit_book.html', {'book': book, 'genres': genres}) # Pass data and genres
+            # --- End Quantity Update and Validation ---
 
 
-        try:
+            # Handle image update
+            if 'image' in request.FILES:
+                # Optional: Delete old image before assigning new one if replacing
+                # if book.image and hasattr(book.image, 'url'):
+                #      try:
+                #          from django.core.files.storage import default_storage
+                #          if default_storage.exists(book.image.path):
+                #              default_storage.delete(book.image.path)
+                #      except Exception as delete_error:
+                #          print(f"Error deleting old image for book {book.id}: {delete_error}")
+
+                book.image = request.FILES['image']
+
+            # Save the Book object first to ensure it has an ID before setting ManyToMany
             book.save()
-            messages.success(request, "Book updated successfully!")
-            return redirect('view_books') # Redirect to the book list after saving
-        except Exception as e:
-            messages.error(request, f"Failed to update book: {e}")
-            # Redirect back to the edit page or view books
-            return redirect('edit_book', book_id=book.id)
 
+            # Update Genres (Many-to-Many)
+            genre_names = request.POST.getlist('genres') # Get the list of selected genre names
+            genres_to_set = []
+            # Find the actual Genre objects based on the submitted names
+            for genre_name in genre_names:
+                 try:
+                     genre = Genre.objects.get(name=genre_name)
+                     genres_to_set.append(genre)
+                 except Genre.DoesNotExist:
+                     # Handle case where a submitted genre name doesn't exist
+                     print(f"Warning: Submitted genre name '{genre_name}' does not exist.")
+                     pass # Optionally, add a message or log this
+
+            # Set the ManyToMany relationship - This replaces all existing genres with the selected ones
+            book.genres.set(genres_to_set)
+
+
+        # If we reach here, all updates within the transaction were successful
+        messages.success(request, f"Book '{book.name}' updated successfully!")
+        # Redirect to the book detail page (assuming 'book_detail' is the URL name)
+        return redirect('book_detail', book_id=book.id) # Redirect to the detail page
+
+    except Exception as e:
+        # If any error occurred during the atomic transaction or before
+        messages.error(request, f"Failed to update book: {e}")
+        # Redirect back to the edit page with the book ID so they can try again
+        # This redirect pattern requires the edit_book URL to accept book_id
+        return redirect('edit_book', book_id=book.id) # Redirect back to the edit form
 
 
 
@@ -152,33 +227,52 @@ def view_books(request):
     return render(request, "admin_temp/books.html", {'books': books})
 
 # Added book_detail view
-@login_required(login_url='/student_login/')
+# @login_required(login_url='/login/') # Example if login is required for all
+@login_required
 def book_detail(request, book_id):
-    """ Displays the details of a specific book. """
+    """ Displays details of a specific book, tailored for admin or student. """
     book = get_object_or_404(Book, id=book_id)
 
-    # --- Add variable to check if the user is a student ---
-    is_student_user = False
-    if request.user.is_authenticated:
+    # --- Check if the logged-in user is an admin (superuser) ---
+    if request.user.is_superuser:
+        # User is an admin, render the admin book detail template
+
+        # Fetch currently issued copies of this book for the admin view
+        issued_copies = IssuedBook.objects.filter(book=book, book_status='Active').select_related('student__user')
+
+        admin_context = {
+            'book': book,
+            'issued_copies': issued_copies, # Pass issued copies to admin template
+            # No need for active_holds or user_has_hold in the admin view context usually
+        }
+        # Render the admin-specific template
+        return render(request, 'admin_temp/admin_book_detail.html', admin_context)
+
+    # --- User is not an admin (must be a logged-in non-superuser) ---
+    else:
+        # User is a logged-in non-superuser (presumably a student)
+        # Add variable to check if the user is a student
         is_student_user = hasattr(request.user, 'student')
-    # --- End added variable ---
 
-    # Fetch active holds for this book if you want to display the queue
-    active_holds = Hold.objects.filter(book=book, is_active=True).order_by('place_date')
+        # Fetch active holds for this book if you want to display the queue (for students)
+        # Only fetch if the user is actually a student
+        active_holds = []
+        user_has_hold = False
+        if is_student_user:
+            active_holds = Hold.objects.filter(book=book, is_active=True).order_by('place_date').select_related('student__user')
+            # Determine if the logged-in student has an active hold on this book
+            user_has_hold = Hold.objects.filter(book=book, student=request.user.student, is_active=True).exists()
 
-    # Determine if the logged-in user has an active hold on this book
-    user_has_hold = False
-    if request.user.is_authenticated and is_student_user: # Use the new variable here too
-         user_has_hold = Hold.objects.filter(book=book, student=request.user.student, is_active=True).exists()
 
-
-    context = {
-        'book': book,
-        'active_holds': active_holds,
-        'user_has_hold': user_has_hold,
-        'is_student_user': is_student_user, # <-- Pass the new variable to the template
-    }
-    return render(request, 'book_detail.html', context)
+        student_context = {
+            'book': book,
+            'active_holds': active_holds, # Pass active holds to student template
+            'user_has_hold': user_has_hold, # Pass user_has_hold to student template
+            'is_student_user': is_student_user, # Pass is_student_user
+        }
+        # Render the student-specific template
+        # Replace 'student/book_detail.html' with the actual path to your student book detail template
+        return render(request, 'student/book_detail.html', student_context)
 
 @login_required(login_url='/admin_login')
 def view_students(request):
@@ -650,43 +744,95 @@ def profile(request):
     return render(request, "student/studentHome.html", {'student': student})
 
 
-@login_required(login_url='/student_login')
-def edit_profile(request):
-    """ Allows students to edit their profile information. """
-    try:
-        student = request.user.student
-    except Student.DoesNotExist:
-        messages.error(request, "User is not a student.")
-        return redirect('index') # Redirect to a safe page
+@login_required(login_url='/student_login/') # Requires student login - ensure this URL name/path is correct
+def edit_student_profile(request): # Renamed function to match template/URL convention
+    """ Handles editing the logged-in student's profile. """
+    user = request.user
 
-    if request.method == "POST":
-        # Be cautious about which fields students can edit.
-        # Avoid letting them change core User fields like username or email directly this way.
-        # It's better to use Django Forms for validation and cleaner handling.
+    # --- Check to ensure the logged-in user is a student ---
+    # Using hasattr is generally cleaner than try/except for OneToOneFields
+    if not hasattr(user, 'student'):
+        messages.error(request, "You must be logged in as a student to edit your profile.")
+        # Redirect to a safe page, like the student login or index
+        return redirect('student_login') # Or redirect('index')
+    # --- End of check ---
 
-        # Updating User fields (handle with care or use a User Update Form)
-        # request.user.email = request.POST.get('email') # Consider using EmailField in Student or User model
-        # request.user.save()
+    student = user.student # Get the related Student object
 
-        student.phone = request.POST.get('phone')
-        student.branch = request.POST.get('branch')
-        student.classroom = request.POST.get('classroom')
-        student.adm_no = request.POST.get('roll_no') # Mismatch with model field name 'adm_no' vs 'roll_no'
-        # Handle image update
-        if 'image' in request.FILES:
-             student.image = request.FILES['image']
+    if request.method == 'POST':
+        # Get data from the form (matching the names in your edit_profile.html template)
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        branch = request.POST.get('branch')
+        classroom = request.POST.get('classroom')
+        address = request.POST.get('address') # Field from model/template
+        guardian_name = request.POST.get('guardian_name') # Field from model/template
+        guardian_phone = request.POST.get('guardian_phone') # Field from model/template
+        image = request.FILES.get('image') # Get the image file
 
+        # --- Use Django's transaction to ensure both saves succeed or fail together ---
         try:
-            student.save()
-            messages.success(request, "Profile updated successfully!")
-            return redirect('profile') # Redirect back to the profile page
-        except Exception as e:
-            messages.error(request, f"Failed to update profile: {e}")
-            # Redirect back to the edit page with current data
-            return render(request, "student/edit.html", {'student': student}) # Pass student object
+            with transaction.atomic():
+                # --- Update User Model Fields ---
+                # Validate email if necessary (Django's User model does some validation on save)
+                user.first_name = first_name
+                user.last_name = last_name
+                user.email = email
+                user.save()
+                # --- End Update User Model Fields ---
 
-    # If GET request, display the current profile data in the form
-    return render(request, "student/edit.html", {'student': student})
+                # --- Update Student Model Fields ---
+                student.phone = phone
+                student.branch = branch
+                student.classroom = classroom
+                student.address = address # Update address
+                student.guardian_name = guardian_name # Update guardian name
+                student.guardian_phone = guardian_phone # Update guardian phone
+
+                # Handle image upload
+                if image:
+                    # Optional: Delete old image before assigning new one if replacing
+                    # if student.image and hasattr(student.image, 'url'): # Check if image exists and has a URL
+                    #      try:
+                    #          # Ensure the file actually exists before attempting deletion
+                    #          from django.core.files.storage import default_storage
+                    #          if default_storage.exists(student.image.path):
+                    #              default_storage.delete(student.image.path)
+                    #      except Exception as delete_error:
+                    #          # Log the deletion error but don't stop the save process
+                    #          print(f"Error deleting old image for student {student.id}: {delete_error}")
+
+                    student.image = image # Assign the new image file
+
+                # Note: adm_no is not updated here as it's usually not student editable
+                # total_fines is also not updated here
+
+                student.save()
+                # --- End Update Student Model Fields ---
+
+            # If we reach here, both saves were successful
+            messages.success(request, "Your profile has been updated successfully.")
+            # Redirect back to the student profile display page (assuming 'student_profile' is the URL name)
+            return redirect('profile') # Ensure this URL name is correct
+
+        except Exception as e:
+            # If any error occurred during the atomic transaction, changes are rolled back
+            messages.error(request, f"Failed to update profile: {e}")
+            # Render the edit page again with the data that was attempted to be saved (before rollback)
+            # Pass both user and student objects to the template
+            return render(request, "student/edit_profile.html", {'user': user, 'student': student}) # Use correct template name and context
+
+
+    else: # GET request - Display the form with current data
+        # Data is automatically available in the template via 'user' and 'student' objects
+        pass # No extra data fetching needed for GET
+
+    # Render the edit profile template for GET requests or POST failures
+    # Pass both user and student objects to the template
+    return render(request, "student/edit_profile.html", {'user': user, 'student': student}) # Use correct template name and context
+
 
 @login_required(login_url='/admin_login')
 def delete_book(request, myid):
@@ -874,13 +1020,20 @@ def admin_login(request):
     if request.method == "POST":
         username = request.POST.get('username')
         password = request.POST.get('password')
-        user = authenticate(username=username, password=password)
+        user = authenticate(request, username=username, password=password) # Use request in authenticate
 
         if user is not None:
             # Check if the user is a superuser
             if user.is_superuser:
                 login(request, user)
-                messages.success(request, f"Welcome, Admin {user.username}!")
+                # --- Modified welcome message logic ---
+                if user.first_name and user.last_name:
+                    messages.success(request, f"Welcome, {user.first_name} {user.last_name}!") # Use full name
+                elif user.first_name:
+                    messages.success(request, f"Welcome, {user.first_name}!") # Use first name
+                else:
+                    messages.success(request, "Welcome, Admin!") # Generic welcome
+                # --- End modified welcome message logic ---
                 return redirect("dash") # Redirect to the admin dashboard
             else:
                 messages.error(request, "You do not have administrator privileges.")
@@ -888,6 +1041,7 @@ def admin_login(request):
             messages.error(request, "Invalid username or password.")
 
     # If GET request or authentication failed
+    # Ensure the template name is correct (you used 'admin_temp/login.html')
     return render(request, "admin_temp/login.html")
 
 
@@ -896,3 +1050,32 @@ def Logout(request):
     logout(request)
     messages.info(request, "You have been logged out.")
     return redirect("index") # Redirect to the homepage"
+
+@login_required(login_url='/student_login/') # Requires student login
+def student_dash(request):
+    """ Displays the dashboard for a logged-in student. """
+    user = request.user
+
+    # --- Check to ensure the logged-in user is a student ---
+    if not hasattr(user, 'student'):
+        messages.error(request, "You must be logged in as a student to access this page.")
+        return redirect('index') # Redirect to index or student login if not a student
+    # --- End of check ---
+
+    student = user.student # Get the related Student object
+
+    # Calculate counts specific to this student
+    # Count active issued books for this student
+    student_issued_books_count = IssuedBook.objects.filter(student=student, book_status='Active').count()
+
+    # Count active holds for this student
+    student_holds_count = Hold.objects.filter(student=student, is_active=True).count()
+
+    context = {
+        'student_issued_books_count': student_issued_books_count,
+        'student_holds_count': student_holds_count,
+        'student': student, # Pass the student object to the template
+        'user': user, # Pass the user object as well
+    }
+    # We will create the student_dash.html template next
+    return render(request, 'student/student_dashboard.html', context)

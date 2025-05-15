@@ -11777,3 +11777,70 @@ section#contact form#contactForm :-ms-input-placeholder {
   font-size: 0.9rem;
   font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
+
+.custom-footer {
+  background-color: #343a40; /* Dark background color (Bootstrap dark theme background) */
+  color: #f8f9fa; /* Light text color (Bootstrap light text) */
+  /* You can add more styling here, like padding, font size, etc. */
+}
+
+.custom-footer a.text-white {
+  color: #007bff !important; /* Example: Bootstrap primary blue for links, !important to override text-white */
+  /* You can change the link color here */
+}
+
+/* If you used text-muted class on the link before, you might need this instead: */
+/*
+.custom-footer a.text-muted {
+  color: #007bff !important;
+}
+*/
+
+/* In your static/css/style.css */
+
+/* Change the color of the main name heading */
+.card-body h4 {
+    color: #333; /* Example: A dark grey color */
+}
+
+/* Change the color of the section headers (Personal Information, Contact Information, etc.) */
+.card-body h6.text-muted {
+    color: #007bff !important; /* Example: Use Bootstrap primary blue, !important to override text-muted */
+    /* You might also want to make them slightly larger or bold */
+    /* font-size: 1.1em; */
+    /* font-weight: bold; */
+}
+
+/* Change the color of the labels (Username, Student ID, etc.) */
+.card-body .row strong {
+    color: #555; /* Example: A slightly lighter grey */
+}
+
+/* Change the color of the information values (the actual data) */
+.card-body .row p.mb-0 {
+     color: #212529; /* Example: Bootstrap default text color */
+}
+
+/* Change the color of the action buttons */
+.card-body .btn-primary {
+    background-color: #28a745; /* Example: Bootstrap success green */
+    border-color: #28a745;
+}
+.card-body .btn-secondary {
+     background-color: #17a2b8; /* Example: Bootstrap info blue */
+     border-color: #17a2b8;
+}
+/* Change text color of buttons if needed (usually handled by Bootstrap) */
+/*
+.card-body .btn {
+    color: white;
+}
+*/
+
+
+/* Example of changing the card background color - Use with caution, might affect overall theme */
+/*
+.card {
+    background-color: #f8f9fa; # Example: Bootstrap light background
+}
+*/

@@ -147,7 +147,7 @@
             </div>
 
             {# Removed the hardcoded "Administrators" card #}
-            {% comment %}
+         
             <div class="col-sm-6 col-xl-3">
                  <div class="card">
                      <div class="card-body">
@@ -168,9 +168,9 @@
                      </div>
                  </div>
              </div>
-             {% endcomment %}
+
              {# Optional: Add a card for Total Users if different from Students #}
-             {% comment %}
+            
              <div class="col-sm-6 col-xl-3">
                   <div class="card">
                       <div class="card-body">
@@ -189,12 +189,12 @@
                       </div>
                   </div>
               </div>
-              {% endcomment %}
+        
 
         </div> {# End row #}
 
          {# Potential area for charts, recent activity, etc. #}
-        {% comment %}
+        
         <div class="row">
             <div class="col-xl-6 col-xxl-7">
                 <div class="card flex-fill w-100">
@@ -207,19 +207,9 @@
                     </div>
                 </div>
             </div>
-            <div class="col-xl-6 col-xxl-5 d-flex">
-                <div class="card flex-fill w-100">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Book Trends (Example Chart)</h5>
-                    </div>
-                    <div class="card-body py-3">
-                        {# Add a chart here, e.g., using Chart.js and passing data from the view #}
-                        <canvas id="chartjs-dashboard-line"></canvas>
-                    </div>
-                </div>
-            </div>
+           
         </div>
-        {% endcomment %}
+    
 
 
     </div> {# End container-fluid #}
