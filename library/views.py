@@ -23,8 +23,7 @@ def is_student(user):
 
 def index(request):
     # Display books on the index page
-    books = Book.objects.all()
-    return render(request, "index2.html", {"books": books})
+    return render(request, "index2.html")
 
 @login_required(login_url='/student_login/') # Redirect to student login if not logged in
 def book_list(request):
