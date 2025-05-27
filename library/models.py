@@ -66,7 +66,7 @@ class Student(models.Model):
     guardian_phone = models.CharField(max_length=10) # guardian_phone max_length seems very short (10)
     phone = models.CharField(max_length=10, blank=True) # phone max_length seems very short (10)
     image = models.ImageField(upload_to='images/')
-
+   
     # Added field for tracking fines
     total_fines = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
 
