@@ -974,7 +974,7 @@ def student_registration(request):
         form['confirm_password']: "fa fa-lock",
     }
 
-    return render(request, "new_student_regform.html", {"form": form, "fields": icons})
+    return render(request, "student_registration.html", {"form": form, "fields": icons})
 
 @csrf_exempt
 def check_email_exist(request):
