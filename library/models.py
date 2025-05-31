@@ -56,6 +56,21 @@ class Book(models.Model):
 
 
 class Student(models.Model):
+    BRANCH_CHOICES = [
+        ('CSE', 'Computer Science'),
+        ('ECE', 'Electronics'),
+        ('ME', 'Mechanical'),
+        ('CE', 'Civil'),
+        # Add more as needed
+    ]
+
+    CLASSROOM_CHOICES = [
+        ('A', 'Class A'),
+        ('B', 'Class B'),
+        ('C', 'Class C'),
+        # Add more as needed
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     classroom = models.CharField(max_length=10)
     branch = models.CharField(max_length=10)

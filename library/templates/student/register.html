@@ -1,129 +1,195 @@
 {% load static %}
+<!DOCTYPE html>
 <html lang="en">
-   
+
 <head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	<meta name="description" content="Responsive Admin &amp; Dashboard Template based on Bootstrap 5">
-	<meta name="author" content="AdminKit">
-	<meta name="keywords" content="adminkit, bootstrap, bootstrap 5, admin, dashboard, template, responsive, css, sass, html, theme, front-end, ui kit, web">
-	<link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-	<link rel="preconnect" href="https://fonts.gstatic.com">
-	<link rel="shortcut icon" href="{% static "img/icons/icon-48x48.png" %}" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Student Registration</title>
 
-	<link rel="canonical" href="https://demo-basic.adminkit.io/" />
-
-	<title>Library</title>
-
-	<link href="{% static "css/app.css" %}" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 
 <body>
-	<main class="d-flex w-100">
-		<div class="container d-flex flex-column">
-			<div class="row vh-100">
-				<div class="col-sm-10 col-md-8 col-lg-6 mx-auto d-table h-100">
-					<div class="d-table-cell align-middle">
+    <main class="d-flex w-100 bg-light">
+        <div class="container d-flex flex-column">
+            <div class="row vh-100">
+                <div class="col-sm-10 col-md-8 col-lg-6 mx-auto d-table h-100">
+                    <div class="d-table-cell align-middle">
+                        <div class="text-center mt-4">
+                            <h2 class="fw-bold">Student Registration HI</h2>
+                            <p class="text-muted">Fill the form below to create your account</p>
+                        </div>
 
-						<div class="text-center mt-4">
-							
-                            
-							<p class="lead">
-							<b>REGISTRATION FORM</b>
-							</p>
-						</div>
-
-						<div class="card">
-							<div class="card-body">
-								<div class="m-sm-4">
-									
-									<form method="POST" enctype="multipart/form-data">
+                        <div class="card shadow">
+                            <div class="card-body">
+                                <div class="m-sm-4">
+                                    <form method="POST" enctype="multipart/form-data">
                                         {% csrf_token %}
 
-										<div class="mb-3">
-											<label class="form-label">Email</label>
-											<input class="form-control form-control-lg" type="email" name="email" placeholder="Enter your Email">
-										</div>
-										
+                                        <!-- First Name -->
                                         <div class="mb-3">
-											<label class="form-label">Username</label>
-											<input class="form-control form-control-lg" type="text" name="username" placeholder="Choose a Username">
-											
-										</div>
-										<div class="mb-3">
-											<label class="form-label">First Name</label>
-											<input class="form-control form-control-lg" type="text" name="first_name" placeholder="Choose ">
-											
-										</div>
-										<div class="mb-3">
-											<label class="form-label">Lastname</label>
-											<input class="form-control form-control-lg" type="text" name="last_name" placeholder="Choose">
-											
-										</div>
-                                        <div class="mb-3">
-											<label class="form-label">Mobile Number</label>
-											<input class="form-control form-control-lg" type="text" name="phone" placeholder="Enter your Phone Number">
-											
-										</div>
-                                        <div class="mb-3">
-											<label class="form-label">Branch Name</label>
-											<input class="form-control form-control-lg" type="text" name="branch" placeholder="Branch">
-											
-										</div>
-                                        <div class="mb-3">
-											<label class="form-label">Class Name</label>
-											<input class="form-control form-control-lg" type="text" name="classroom" placeholder="Class">
-											
-										</div>
-                                        <div class="mb-3">
-											<label class="form-label">Student Image</label>
-                                            <input type="file" class="form-control mt-2" name="image" required>
-											
-										</div>
-                                        
-                                        <div class="mb-3">
-											<label class="form-label">Password</label>
-											<input class="form-control form-control-lg" type="password" name="password" placeholder="Password">
-											
-										</div>
-                                        <div class="mb-3">
-											<label class="form-label">Confirm Password</label>
-											<input class="form-control form-control-lg" type="password" name="confirm_password" placeholder="Confirm password">
-											
-										</div>
-										<div>
-											<label class="form-check">
-            <input class="form-check-input" type="checkbox" value="remember-me" name="remember-me" checked="">
-            <span class="form-check-label">
-              Remember me next time
-            </span>
-          </label>
-										</div>
-										<div class="text-center mt-3">
-											
-											<button type="submit" class="btn btn-lg btn-primary">Sign in</button>
-										</div>
-									</form>
-								</div>
-							</div>
-						</div>
+                                            <label class="form-label">First Name</label>
+                                            <input type="text" class="form-control" name="first_name" placeholder="Enter your first name" required>
+                                        </div>
 
-					</div>
-				</div>
-			</div>
-		</div>
-	</main>
+                                        <!-- Last Name -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Last Name</label>
+                                            <input type="text" class="form-control" name="last_name" placeholder="Enter your last name" required>
+                                        </div>
 
-	<script src="{% static "js/app.js" %}"></script>
+                                        <!-- Username -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Username</label>
+                                            <input type="text" class="form-control" name="username" placeholder="Choose a username" required>
+                                        </div>
+
+                                        <!-- Email -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Email</label>
+                                            <input type="email" class="form-control" name="email" placeholder="Enter your email" required>
+                                        </div>
+
+                                        <!-- Phone -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Mobile Number</label>
+                                            <input type="text" class="form-control" name="phone" placeholder="Enter your mobile number" required>
+                                        </div>
+
+                                        <!-- Branch -->
+                                        <div class="mb-3">
+    <label class="form-label">Branch</label>
+    <select class="form-control" name="branch" required>
+        <option value="" disabled selected>Select Branch</option>
+        {% for code, name in branches %}
+        <option value="{{ code }}">{{ name }}</option>
+        {% endfor %}
+    </select>
+</div>
+                                        <!-- Classroom -->
+                                      <div class="mb-3">
+    <label class="form-label">Classroom</label>
+    <select class="form-control" name="classroom" required>
+        <option value="" disabled selected>Select Classroom</option>
+        {% for code, name in classrooms %}
+        <option value="{{ code }}">{{ name }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+                                        <!-- Image Upload -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Student Image</label>
+                                            <input type="file" class="form-control" name="image" required>
+                                        </div>
+
+                                        <!-- Password -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Password</label>
+                                            <input type="password" class="form-control" name="password" placeholder="Enter password" required>
+                                        </div>
+
+                                        <!-- Confirm Password -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Confirm Password</label>
+                                            <input type="password" class="form-control" name="confirm_password" placeholder="Re-enter password" required>
+                                        </div>
+
+                                        <!-- Remember Me (Optional) -->
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="rememberMe" name="remember-me" checked>
+                                            <label class="form-check-label" for="rememberMe">
+                                                Remember me next time
+                                            </label>
+                                        </div>
+
+                                        <!-- Submit Button -->
+                                        <div class="text-center">
+                                            <button type="submit" class="btn btn-primary btn-lg w-100">Register</button>
+                                        </div>
+                                    </form>
+
+                                    <!-- Display Django messages -->
+                                    {% if messages %}
+                                        <div class="mt-3">
+                                            {% for message in messages %}
+                                                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <a href="{% url 'student_login' %}">Already have an account? Login here</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
 
 	<script>
-		{% if alert %}
-		alert("Registration Successfull.")
-		document.location = "/student_login"
-		{% endif %}
-	</script>
+document.addEventListener("DOMContentLoaded", function () {
+    const emailField = document.querySelector('input[name="email"]');
+    const usernameField = document.querySelector('input[name="username"]');
 
+    const showMessage = (element, message, type) => {
+        let feedback = element.nextElementSibling;
+        if (!feedback || !feedback.classList.contains("form-text")) {
+            feedback = document.createElement("div");
+            feedback.className = "form-text";
+            element.parentNode.appendChild(feedback);
+        }
+        feedback.textContent = message;
+        feedback.style.color = type === 'error' ? 'red' : 'green';
+    };
 
-</body></html>
+    emailField.addEventListener("blur", function () {
+        fetch("{% url 'check_email_exist' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: `email=${encodeURIComponent(emailField.value)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                showMessage(emailField, "Email is already taken.", "error");
+            } else {
+                showMessage(emailField, "Email is available.", "success");
+            }
+        });
+    });
+
+    usernameField.addEventListener("blur", function () {
+        fetch("{% url 'check_username_exist' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: `username=${encodeURIComponent(usernameField.value)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                showMessage(usernameField, "Username is already taken.", "error");
+            } else {
+                showMessage(usernameField, "Username is available.", "success");
+            }
+        });
+    });
+});
+</script>
+
+    
+</body>
+</html>

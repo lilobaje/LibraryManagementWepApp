@@ -924,57 +924,61 @@ def change_password(request):
 
 def student_registration(request):
     if request.method == 'POST':
-        form = StudentForm(request.POST, request.FILES)
-        if form.is_valid():
-            data = form.cleaned_data
-            password = data.get('password')
-            confirm_password = data.get('confirm_password')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        branch = request.POST.get('branch')
+        classroom = request.POST.get('classroom')
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('confirm_password')
+        image = request.FILES.get('image')
 
-            if password != confirm_password:
-                messages.error(request, "Passwords do not match.")
-            elif User.objects.filter(username=data['username']).exists():
-                messages.error(request, "Username already exists.")
-            elif User.objects.filter(email=data['email']).exists():
-                messages.error(request, "Email already exists.")
-            else:
-                user = User.objects.create_user(
-                    username=data['username'],
-                    email=data['email'],
-                    password=password,
-                    first_name=data['first_name'],
-                    last_name=data['last_name']
-                )
-
-                # Create Student profile
-                Student.objects.create(
-                    user=user,
-                    phone=data['phone'],
-                    branch=data['branch'],
-                    classroom=data['classroom'],
-                    image=request.FILES.get('image')
-                )
-
-                messages.success(request, "Student registered successfully.")
-                return redirect('student_login')  # ✅ Fixed redirect
+        # Validation
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match.")
+        elif User.objects.filter(username=username).exists():
+            messages.error(request, "Username already exists.")
+        elif User.objects.filter(email=email).exists():
+            messages.error(request, "Email already exists.")
         else:
-            messages.error(request, "Please correct the errors below.")
-    else:
-        form = StudentForm()
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name
+            )
 
-    icons = {
-        form['first_name']: "fa fa-user",
-        form['last_name']: "fa fa-user",
-        form['username']: "fa fa-user-tag",
-        form['email']: "fa fa-envelope",
-        form['phone']: "fa fa-phone",
-        form['branch']: "fa fa-school",
-        form['classroom']: "fa fa-chalkboard-teacher",
-        form['image']: "fa fa-image",
-        form['password']: "fa fa-lock",
-        form['confirm_password']: "fa fa-lock",
-    }
+            Student.objects.create(
+                user=user,
+                phone=phone,
+                branch=branch,
+                classroom=classroom,
+                image=image
+            )
 
-    return render(request, "student_registration.html", {"form": form, "fields": icons})
+            messages.success(request, "Student registered successfully.")
+            return redirect('student_login')
+
+    # Branch and classroom options
+    branches = [
+        ('CSE', 'Computer Science'),
+        ('ECE', 'Electronics'),
+        ('ME', 'Mechanical'),
+        ('CE', 'Civil'),
+    ]
+    classrooms = [
+        ('A', 'Class A'),
+        ('B', 'Class B'),
+        ('C', 'Class C'),
+    ]
+
+    return render(request, "student/register.html", {
+        "branches": branches,
+        "classrooms": classrooms
+    })
 
 @csrf_exempt
 def check_email_exist(request):
