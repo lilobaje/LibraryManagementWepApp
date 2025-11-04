@@ -1,4 +1,5 @@
 import os
+import dj_database_url
 from pathlib import Path
 from django.core.management.utils import get_random_secret_key
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -69,11 +70,9 @@ WSGI_APPLICATION = 'LibraryManagementSystem.wsgi.application'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL')),
     }
-}
+
 
 # DATABASES = {
 #     'default': {
