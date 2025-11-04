@@ -17,6 +17,20 @@ from .forms import StudentForm
 # Import necessary models
 from .models import Book, Student, IssuedBook, Hold, Genre, User
 
+def create_default_admin():
+    username = "admin"
+    password = "admin123"
+    email = "admin@example.com"
+    if not User.objects.filter(username=username).exists():
+        User.objects.create_superuser(username=username, password=password, email=email)
+        print("✅ Superuser created successfully.")
+    else:
+        print("✅ Superuser already exists.")
+
+# Run it once at startup
+create_default_admin()
+
+
 # Helper function to check if a user is a student (based on having a related Student object)
 def is_student(user):
     return hasattr(user, 'student')
