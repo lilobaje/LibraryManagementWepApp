@@ -72,14 +72,14 @@ class Student(models.Model):
     ]
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    classroom = models.CharField(max_length=10)
-    branch = models.CharField(max_length=10)
-    adm_no = models.CharField(max_length=3, blank=True, default=return_timestamped_id) # adm_no max_length seems very short (3)
-    address = models.CharField(max_length=10) # address max_length seems very short (10)
-    email = models.CharField(max_length=10) # email max_length seems very short (10) - Consider using Django's EmailField and linking to User.email
-    guardian_name = models.CharField(max_length=10) # guardian_name max_length seems very short (10)
-    guardian_phone = models.CharField(max_length=10) # guardian_phone max_length seems very short (10)
-    phone = models.CharField(max_length=10, blank=True) # phone max_length seems very short (10)
+    classroom = models.CharField(max_length=100)
+    branch = models.CharField(max_length=100)
+    adm_no = models.CharField(max_length=100, blank=True, default=return_timestamped_id) # adm_no max_length seems very short (3)
+    address = models.CharField(max_length=100) # address max_length seems very short (10)
+    email = models.CharField(max_length=100) # email max_length seems very short (10) - Consider using Django's EmailField and linking to User.email
+    guardian_name = models.CharField(max_length=100) # guardian_name max_length seems very short (10)
+    guardian_phone = models.CharField(max_length=100) # guardian_phone max_length seems very short (10)
+    phone = models.CharField(max_length=100, blank=True) # phone max_length seems very short (10)
     image = models.ImageField(upload_to='images/')
    
     # Added field for tracking fines
