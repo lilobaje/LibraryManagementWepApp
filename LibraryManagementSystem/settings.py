@@ -80,7 +80,11 @@ DATABASES = {
 #         'NAME': os.path.join('/code/db', 'db.sqlite3'),
 #     }
 # }
-
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default='sqlite:///db.sqlite3'  # fallback for local dev
+#     )
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
